@@ -130,214 +130,69 @@ cp -l 03_combine/isec_panel_and_wgrs/0003.vcf 03_combine/parent_panel_shared_in_
 ### 04. Concatenate parent panel loci into parent wgrs only data ###
 Prepare the parent wgrs-only file to be combined:       
 ```
-# Prepare to rename wgrs samples so they match between the files
-bcftools query -l 11_impute_combine/parent_wgrs_only.vcf > 11_impute_combine/wgrs_parents_orgn_names.txt
-# ...then manually annotate the file to separate the old_name and new_name with whitespace, single line per sample
+# Create a renaming file 
+bcftools query -l 03_combine/parent_wgrs_only.bcf > 03_combine/parent_wgrs_samplenames.csv
+# ...then manually annotate by adding a space and giving the new name for the sample 
 
-# Rename in the VCF file
-bcftools reheader --samples 11_impute_combine/wgrs_parents_orgn_names.txt -o 11_impute_combine/parent_wgrs_only_renamed.vcf 11_impute_combine/parent_wgrs_only.vcf
+# Rename in the BCF file
+bcftools reheader --samples 03_combine/parent_wgrs_samplenames.csv -o 03_combine/parent_wgrs_only_renamed.bcf 03_combine/parent_wgrs_only.bcf
 
 # Create sorted text file of new names
-bcftools query -l 11_impute_combine/parent_wgrs_only_renamed.vcf | sort > 11_impute_combine/wgrs_parents_new_names_sorted.txt
+bcftools query -l 03_combine/parent_wgrs_only_renamed.bcf | sort > 03_combine/parent_wgrs_samplenames_sorted.csv
 
-# Sort in the VCF file
-bcftools view -S 11_impute_combine/wgrs_parents_new_names_sorted.txt 11_impute_combine/parent_wgrs_only_renamed.vcf -o 11_impute_combine/parent_wgrs_only_renamed_sorted.vcf
+# Sort in the BCF file
+bcftools view -S 03_combine/parent_wgrs_samplenames_sorted.csv 03_combine/parent_wgrs_only_renamed.bcf -Ob -o 03_combine/parent_wgrs_only_renamed_sorted.bcf
 
-# Compress and index 
-bgzip 11_impute_combine/parent_wgrs_only_renamed_sorted.vcf
-
+# Index 
 bcftools index 11_impute_combine/parent_wgrs_only_renamed_sorted.vcf.gz
 ```
 
 Prepare the parent panel data to be combined:       
 ```
 # Copy the parent panel data into the combined folder
-cp -l 10_impute_input/parent_panel_roslin_rehead_hotspot_only.bcf 11_impute_combine/
+cp -l 02_input_data/parent_ld/parent_panel.bcf ./03_combine/
 
-# Prepare to rename panel samples so they match between the files
-bcftools query -l 11_impute_combine/parent_panel_roslin_rehead_hotspot_only.bcf > 11_impute_combine/panel_parents_orgn_names.txt
-# ...then manually annotate the file to separate the old_name and new_name with whitespace, single line per sample
+# No need to rename, but can follow the above instructions if needed
 
-# Rename in the VCF file
-bcftools reheader --samples 11_impute_combine/panel_parents_orgn_names.txt 11_impute_combine/parent_panel_roslin_rehead_hotspot_only.bcf -o 11_impute_combine/parent_panel_roslin_rehead_hotspot_only_renamed.bcf
-
-# Collect the new amp panel parent names and sort the names into a file
-bcftools query -l 11_impute_combine/parent_panel_roslin_rehead_hotspot_only_renamed.bcf | sort > 11_impute_combine/panel_parents_new_names_sorted.txt
+# Create sorted text file of names 
+bcftools query -l 03_combine/parent_panel.bcf | sort > 03_combine/parent_panel_samplenames_sorted.csv
 
 # Sort in the BCF file
-bcftools view -S 11_impute_combine/panel_parents_new_names_sorted.txt 11_impute_combine/parent_panel_roslin_rehead_hotspot_only_renamed.bcf -o 11_impute_combine/parent_panel_roslin_rehead_hotspot_only_renamed_sorted.bcf
+bcftools view -S 03_combine/parent_panel_samplenames_sorted.csv 03_combine/parent_panel.bcf -Ob -o 03_combine/parent_panel_sorted.bcf
 
 # index
-bcftools index 11_impute_combine/parent_panel_roslin_rehead_hotspot_only_renamed_sorted.bcf
-
+bcftools index 03_combine/parent_panel_sorted.bcf
 ```
 
 Combine the parent data with bcftools concat
 ```
-bcftools concat --allow-overlaps 11_impute_combine/parent_wgrs_only_renamed_sorted.vcf.gz 11_impute_combine/parent_panel_roslin_rehead_hotspot_only_renamed_sorted.bcf -Ob -o 11_impute_combine/parent_wgrs_and_panel.bcf
+bcftools concat --allow-overlaps 03_combine/parent_wgrs_only_renamed_sorted.bcf 03_combine/parent_panel_sorted.bcf -Ob -o 03_combine/parent_wgrs_and_panel.bcf
 
 # Index
-bcftools index 11_impute_combine/parent_wgrs_and_panel.bcf
-
+bcftools index 03_combine/parent_wgrs_and_panel.bcf
 ```
+
 
 ### 05. Merge parent wgrs and panel data with offspring panel data ###
-a) Identify loci in the offspring panel file that overlap with the wgrs+panel parent file     
+If you need to identify which offspring panel data can be merged (i.e., if genotyping was not together), see #TODO README.     
+
+Combine the wgrs+panel parent data with the panel offspring data
 ```
-# Bring offspring data to folder
-cp -l 10_impute_input/offspring_panel_roslin_rehead_hotspot_only.bcf* ./11_impute_combine/
+# Merge parent wgrs+panel with offspring panel
+bcftools merge 03_combine/parent_wgrs_and_panel.bcf 02_input_data/offspring_ld/offspring_panel.bcf -Ob -o 03_combine/all_inds_wgrs_and_panel.bcf
 
-# Create isec folder to capture output
-mkdir 11_impute_combine/isec_combine_parents_and_offspring/
+# Remove multiallelic if present
+bcftools view --max-alleles 2 03_combine/all_inds_wgrs_and_panel.bcf -Ob -o 03_combine/all_inds_wgrs_and_panel_biallele.bcf
 
-# Use isec to compare the files (no need for --collapse here, want only common shared REF alleles)
-bcftools isec 11_impute_combine/parent_wgrs_and_panel.bcf 11_impute_combine/offspring_panel_roslin_rehead_hotspot_only.bcf -p 11_impute_combine/isec_combine_parents_and_offspring/
+# Copy to imputation folder
+cp -l 03_combine/all_inds_wgrs_and_panel_biallele.bcf ./04_impute/
 
-## Interpretation:    
-# 0000.vcf = private to parents (wgrs+panel)
-# 0001.vcf = private to offspring (panel)
-# 0002.vcf = records from parents (wgrs+panel) shared in both
-# 0003.vcf = records from offspring (panel) shared in both
-
-# Save and rename 0003.vcf
-cp 11_impute_combine/isec_combine_parents_and_offspring/0003.vcf 11_impute_combine/offspring_panel_roslin_rehead_hotspot_only_common_w_parents.vcf
-
-# Compress and index
-bgzip 11_impute_combine/offspring_panel_roslin_rehead_hotspot_only_common_w_parents.vcf
-bcftools index 11_impute_combine/offspring_panel_roslin_rehead_hotspot_only_common_w_parents.vcf.gz
+# Index 
+bcftools index 04_impute/all_inds_wgrs_and_panel_biallele.bcf
 ```
 
-b) Combine the wgrs+panel parent data with the panel offspring data
-```
-bcftools merge 11_impute_combine/parent_wgrs_and_panel.bcf 11_impute_combine/offspring_panel_roslin_rehead_hotspot_only_common_w_parents.vcf.gz -Ob -o 11_impute_combine/all_inds_wgrs_and_panel.bcf
 
-bcftools index 11_impute_combine/all_inds_wgrs_and_panel.bcf
-
-# Copy the all-data file into the imputation folder, and index
-cp -l 11_impute_combine/all_inds_wgrs_and_panel.bcf* 12_impute_impute/
-
-# Remove multiallelic sites
-bcftools view --max-alleles 2 ./12_impute_impute/all_inds_wgrs_and_panel.bcf -Ob -o 12_impute_impute/all_inds_wgrs_and_panel_no_multiallelic.bcf    
-
-```
-
-#### Optional: Remove Mendelian incompatibility loci ####
-Create a BCF file with parent and offspring panel-only loci:     
-```
-# Prepare an output folder for bcftools isec
-mkdir 12_impute_impute/isec_keep_only_panel_loci/
-
-# Index
-bcftools index 12_impute_impute/all_inds_wgrs_and_panel_no_multiallelic.bcf
-
-# run isec to identify loci shared between all loci and panel-only offspring loci
-bcftools isec ./12_impute_impute/all_inds_wgrs_and_panel_no_multiallelic.bcf 11_impute_combine/offspring_panel_roslin_rehead_hotspot_only_common_w_parents.vcf.gz -p 12_impute_impute/isec_keep_only_panel_loci/
-
-## Interpretation:    
-# 0000.vcf = private to all_inds_wgrs_and_panel_no_multiallelic.bcf
-# 0001.vcf = private to offspring panel
-# 0002.vcf = records from all_inds shared in both
-# 0003.vcf = records from offspring panel shared in both
-
-# Save the records from all_inds shared in both
-cp -l 12_impute_impute/isec_keep_only_panel_loci/0002.vcf 12_impute_impute/all_inds_panel_only.vcf
-
-```
-
-Use bcftools plugin mendelian to scan for Mendelian inconsistencies
-```
-# Use the pedigree file that has been annotated elsewhere in this pipeline, and format as needed for the plugin
-awk '{ print $3 "," $2 "," $1 }' 12_impute_impute_no_novel/pedigree_annot.csv | grep -vE '^0' - > 12_impute_impute/pedigree.csv
-
-# Use bcftools plugin Mendelian to annotate the number of Mendelian errors (MERR) in the BCF file and output
-bcftools +mendelian 12_impute_impute/all_inds_panel_only.vcf -T 12_impute_impute/pedigree.csv --mode a -Ob -o 12_impute_impute/all_inds_panel_only_annot_MERR.vcf
-
-# Observe the distribution of MERR
-bcftools query -f '%CHROM %POS %MERR\n' 12_impute_impute/all_inds_panel_only_annot_MERR.vcf | sort -nk 3 | less
-
-# Create a BCF file with the problematic loci 
-bcftools view -i 'INFO/MERR >= 4' 12_impute_impute/all_inds_panel_only_annot_MERR.vcf -Ob -o 12_impute_impute/all_inds_panel_only_annot_MERR_problem_loci.bcf
-
-# Index
-bcftools index 12_impute_impute/all_inds_panel_only_annot_MERR_problem_loci.bcf
-```
-
-Remove the Mendelian inconsistencies from the wgrs+panel all individual file
-```
-# Prepare an output folder for bcftools isec
-mkdir 12_impute_impute/isec_remove_MERR/
-
-# run isec to identify loci private to the all loci data (dropping MERR)
-bcftools isec ./12_impute_impute/all_inds_wgrs_and_panel_no_multiallelic.bcf 11_impute_combine/offspring_panel_roslin_rehead_hotspot_only_common_w_parents.vcf.gz -p 12_impute_impute/isec_keep_only_panel_loci/
-
-## Interpretation:    
-# 0000.vcf = private to all_inds_wgrs_and_panel_no_multiallelic.bcf
-# 0001.vcf = private to problem loci 
-# 0002.vcf = records from all_inds shared in both
-# 0003.vcf = records from problem loci shared in both
-
-# Save the private records from all_inds
-cp -l 12_impute_impute/isec_remove_MERR/0000.vcf 12_impute_impute/all_inds_wgrs_and_panel_no_multiallelic_no_MERR.vcf
-
-# Convert to BCF
-bcftools view 12_impute_impute/all_inds_wgrs_and_panel_no_multiallelic_no_MERR.vcf -Ob -o 12_impute_impute/all_inds_wgrs_and_panel_no_multiallelic_no_MERR.bcf
-
-# note: as clean-up, you may want to delete the isec folders, as they are large
-```
-
-#### Optional: Remove multi-mapper loci ####
-Obtain the multi-mappers from Sutherland et al. 2024, Additional File S4. Save as two csv files, `bowtie_multimappers.csv` and `bwa_multimappers.csv` into `12_impute_impute`.    
-
-Pull the loci from the latest BCF file that have marker names (i.e., they were from panel hotspots):    
-```
-bcftools view 12_impute_impute_no_novel_no_MERR/all_inds_wgrs_and_panel_no_multiallelic_no_MERR.bcf | grep -vE '^#' - | awk '$3!="." { print $0 }' - > 12_impute_impute/hotspot_loci_in_bcf.txt
-# note: this file will be used to translate from the marker name to the chr and position info, which is the way the multimappers will be removed from the ai2 input file
-```
-
-Use Rscript to identify the chromosome and position names of the multimappers, read in the latest pre-impute ai2, and drop the multimappers from the pre-impute ai2 file:  
-`01_scripts/impute_drop_multimappers_from_ai2.R`
-
-This step will also require the ai2 input file that is produced from the BCF file (see next step), which will be subset using the specific markers and written back out. Then it joins the regular workflow by splitting the ai2 file into chromosomes and running ai2.    
-
-
-#### Optional: Include some high density offspring to support the imputation ####
-Copy in the all inds wgrs and panel BCF file, as well as the all offspring wgrs 10x data into `12_impute_impute`.     
-Prepare files for combining:    
-```
-# Remove four offspring from each family from the imputation target file
-bcftools view 12_impute_impute/all_inds_wgrs_and_panel_no_multiallelic_no_MERR.bcf --samples ^ASY2_114_R1_1,ASY2_114_R1_2_ReAMP,ASY2_114_R1_3_ReAMP,ASY2_114_R1_4_ReAMP,ASY2_115_R1_1_ReAMP,ASY2_115_R1_2_ReAMP,ASY2_115_R1_3_ReAMP,ASY2_115_R1_4_ReAMP,ASY2_116_R1_1_ReAMP,ASY2_116_R1_2_ReAMP,ASY2_116_R2_1_ReAMP,ASY2_116_R2_2_ReAMP,ASY2_117_R1_1_ReAMP,ASY2_117_R1_2_ReAMP,ASY2_117_R1_3_ReAMP,ASY2_117_R1_4_ReAMP -Ob -o 12_impute_impute/all_inds_wgrs_and_panel_no_multiallelic_no_MERR_rem_16_inds.bcf
-
-# Index
-bcftools index 12_impute_impute/all_inds_wgrs_and_panel_no_multiallelic_no_MERR_rem_16_inds.bcf
-
-
-# Isolate these same individuals from the 10X wgrs offspring file
-bcftools view 12_impute_impute/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1.bcf --samples ASY2-114-R1-1-43820254_S191_L002_R1.fastq.gz,ASY2-114-R1-2-43820255_S192_L002_R1.fastq.gz,ASY2-114-R1-3-43820256_S193_L002_R1.fastq.gz,ASY2-114-R1-4-43820257_S194_L002_R1.fastq.gz,ASY2-115-R1-1-43820314_S246_L002_R1.fastq.gz,ASY2-115-R1-2-43820315_S247_L002_R1.fastq.gz,ASY2-115-R1-3-43820316_S248_L002_R1.fastq.gz,ASY2-115-R1-4-43820317_S249_L002_R1.fastq.gz,ASY2-116-R1-1-43820371_S31_L002_R1.fastq.gz,ASY2-116-R1-2-43820372_S32_L002_R1.fastq.gz,ASY2-116-R2-1-43820379_S34_L002_R1.fastq.gz,ASY2-116-R2-2-43820380_S35_L002_R1.fastq.gz,ASY2-117-R1-1-43820428_S63_L002_R1.fastq.gz,ASY2-117-R1-2-43820429_S64_L002_R1.fastq.gz,ASY2-117-R1-3-43820430_S65_L002_R1.fastq.gz,ASY2-117-R1-4-43820431_S66_L002_R1.fastq.gz -Ob -o 12_impute_impute/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_select_16_inds.bcf
-
-# Index
-bcftools index 12_impute_impute/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_select_16_inds.bcf
-
-# Compare the two prepared files via isec
-mkdir 12_impute_impute/isec_impute_target_vs_10X/
-
-bcftools isec 12_impute_impute/all_inds_wgrs_and_panel_no_multiallelic_no_MERR_rem_16_inds.bcf 12_impute_impute/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_select_16_inds.bcf -p 12_impute_impute/isec_impute_target_vs_10X/
-
-## Interpretation:
-# 0000.vcf = private to impute target file
-# 0001.vcf = private to 10x file
-# 0002.vcf = records from impute target file shared in both
-# 0003.vcf = records from 10x file shared in both
-
-# Use 0003.vcf, but convert to bcf first, and save out
-bcftools view 12_impute_impute/isec_impute_target_vs_10X/0003.vcf -Ob -o 12_impute_impute/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_select_16_inds_w_compat_loci.bcf
-
-bcftools index 12_impute_impute/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_select_16_inds_w_compat_loci.bcf
-
-# Clean up space by deleting the isec folder
-
-# Combine
-bcftools merge 12_impute_impute/all_inds_wgrs_and_panel_no_multiallelic_no_MERR_rem_16_inds.bcf 12_impute_impute/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_select_16_inds_w_compat_loci.bcf -Ob -o 12_impute_impute/all_inds_wgrs_and_panel_no_multiallelic_no_MERR_add_16_HD_offspring.bcf
-```
+- #TODO: add links to optional README approaches 
 
 
 ### 06. Imputation ###
