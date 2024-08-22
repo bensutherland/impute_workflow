@@ -3,3 +3,8 @@
 *.txt
 *.vcf
 *.csv
+*.haplotypes
+*.genotypes
+*.pdf
+*#
+*.swp
