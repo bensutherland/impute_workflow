@@ -191,7 +191,6 @@ cp -l 03_combine/all_inds_wgrs_and_panel_biallele.bcf ./04_impute/
 bcftools index 04_impute/all_inds_wgrs_and_panel_biallele.bcf
 ```
 
-
 - #TODO: add links to optional README approaches 
 
 
@@ -261,83 +260,3 @@ cp -l ~/Documents/cgig/CHR8_wgrs/wgrs_workflow_offspring/05_genotyping/mpileup_c
 # produces plots of average concordance between methods per individual by chromosome, and other outputs to screen
 ```
 
-
-### 08. Run GWAS on imputed data and plot results ###
-Prepare GEMMA inputs:     
-`01_scripts/imputed_ai2_to_gemma.R`      
-
-Run GEMMA:    
-```
-cd 12_impute_impute
-gemma -g gwas_geno.txt -p gwas_pheno.txt -gk -maf 0.05 -o gwas_all_fam
-gemma -g gwas_geno.txt -p gwas_pheno.txt -k output/gwas_all_fam.cXX.txt -n 1 -c gwas_covar.txt  -maf 0.05 -lmm 4 -o gwas_all_fam_covar
-
-```
-
-
-Plot GEMMA outputs:    
-`01_scripts/imputed_plot_gemma_results.R`    
-
-
-
-### 09. Add grandparent data ###
-Genotype grandparents with `wgrs_workflow`, then copy the filtered BCF to the present repository.     
-
-```
-# Index the two target files before running isec
-bcftools index 12_impute_impute/all_inds_wgrs_and_panel_no_multiallelic_no_MERR.bcf
-bcftools index 12_impute_impute/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP10000_miss0.1.bcf
-
-# prepare an output folder for bcftools isec
-mkdir 12_impute_impute/combine_all_inds_and_grandparents/
-
-# run isec 
-bcftools isec 12_impute_impute/all_inds_wgrs_and_panel_no_multiallelic_no_MERR.bcf 12_impute_impute/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP10000_miss0.1.bcf -p 12_impute_impute/combine_all_inds_and_grandparents/
-
-
-## Interpretation:    
-# 0000.vcf = private to all_inds_wgrs_and_panel_no_multiallelic_no_MERR.bcf
-# 0001.vcf = private to grandparents (mpileup*) 
-# 0002.vcf = records from all_inds shared in both
-# 0003.vcf = records from grandparents shared in both
-
-# Save out the target file to be combined
-bcftools view 12_impute_impute/combine_all_inds_and_grandparents/0003.vcf -Ob -o 12_impute_impute/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP10000_miss0.1_compatible.bcf
-
-# Index the output
-bcftools index 12_impute_impute/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP10000_miss0.1_compatible.bcf
-
-# Then can delete the isec folder to save space
-```
-
-Combine the all inds wgrs+panel with the grandparent RADseq     
-```
-bcftools merge 12_impute_impute/all_inds_wgrs_and_panel_no_multiallelic_no_MERR.bcf 12_impute_impute/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP10000_miss0.1_compatible.bcf -Ob -o 12_impute_impute/all_inds_wgrs_and_panel_no_multiallelic_no_MERR_w_grandparents.bcf
-```
-
-Next, go back up to the Imputation section and run.     
-
-
-#### 06. Filter VCF and prepare for gemma analysis #### 
-Use script `01_scripts/chr8_oshv1_amp_02_vcf_to_gemma.R`       
-
-
-#### 07. Gemma analysis ####
-Put output of the above script into `03_results`, then change directly into this folder to run the following commands.     
-```
-cd 03_results
-gemma -g gwas_geno.txt -p gwas_pheno.txt -gk -maf 0.05 -o gwas_all_fam
-gemma -g gwas_geno.txt -p gwas_pheno.txt -k output/gwas_all_fam.cXX.txt -n 1 -c gwas_covar.txt  -maf 0.05 -lmm 4 -o gwas_all_fam_covar
-```
-
-Then go to `chr8_oshv1_amp_03_gemma_results.R`.    
-
-Optional: create a reduced dataset for testing:     
-```
-# Subset only a single chr for testing
-bcftools view 11_impute_combine/all_inds_wgrs_and_panel.bcf --regions NC_047567.1 -Ob -o 12_impute_impute/all_inds_wgrs_and_panel_NC_047567_1.bcf
-
-# Show number of panel loci
-bcftools view 12_impute_impute/all_inds_wgrs_and_panel_NC_047567_1.bcf | grep -vE '^#' - | awk '{ print $3 }' - | sort | uniq -c | sort -nk1 | less
-
-```        
