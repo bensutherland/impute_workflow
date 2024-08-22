@@ -80,20 +80,31 @@ bcftools merge --file-list 10_impute_input/parent_panel/sample_list.txt -Ov -o 1
 note: these have novel variants also, which will need to be removed eventually (below)    
 
 
-##### Parent wgrs data #####
+##### Separate wgrs data #####
 If the parent and offspring wgrs data were all genotyped together, you will need to create a parent-only subset of the data, then index as follows:      
 
 ```
 # Create a parent samplefile
-bcftools query -l 10_impute_input/parent_wgrs/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1.bcf | grep -vE '^ASY2' - > 10_impute_input/parent_wgrs/parent_samplelist.txt
+bcftools query -l 02_input_data/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1.bcf | grep -vE '^ASY2' - > 02_input_data/parent_hd_samplelist.txt
 
 # Select only the parents from the dataset
-bcftools view -S 10_impute_input/parent_wgrs/parent_samplelist.txt 10_impute_input/parent_wgrs/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1.bcf -Ob -o 10_impute_input/parent_wgrs/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_parents_only.bcf
+- #todo
 
 # Index
-bcftools index 10_impute_input/parent_wgrs/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_parents_only.bcf 
+- #todo
 ```
 
+Create an offspring-only wgrs datafile:     
+```
+# Identify sample names for offspring
+bcftools query -l 02_input_data/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1.bcf | grep -E '^ASY2' - > 02_input_data/offspring_hd_samplelist.txt
+
+# Subset
+bcftools view -S 02_input_data/offspring_hd_samplelist.txt 02_input_data/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1.bcf -Ob -o 02_input_data/offspring_hd/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_offspring_only.bcf
+
+# Index
+
+```
 
 ### 02. Exclude panel loci from parent wgrs data ###
 Before merging the parent wgrs and panel loci, we need to remove all overlapping loci from the wgrs data. While doing this, it is possible to check for concordance in the overlapping loci.   
@@ -199,19 +210,19 @@ The data is now all in a single BCF file and is ready for the imputation process
 
 Prepare a pedigree file:      
 ```
-bcftools query -l 12_impute_impute/<impute_target>.bcf > 12_impute_impute/pedigree.txt 
+bcftools query -l 04_impute/all_inds_wgrs_and_panel_biallele.bcf > 04_impute/pedigree.txt
 
 # Annotate the above file as follows:    
 # <indiv> <sire> <dam>     
 # where if there is no sire or dam, put 0
-# save as space-delimited with the suffix `_annot.txt`.    
+# save as space-delimited    
 ```
 
 Format from BCF to AlphaImpute2:       
 ```
 # Prepare ai2 matrix by building a header, and extracting info from the BCF, and converting to ai2 format
 ./01_scripts/bcf_to_ai2.sh
-# produces: 12_impute_impute/all_inds_wgrs_and_panel_no_multiallelic_ai2.txt
+# produces: 04_impute/<input_filename>_ai2.txt
 
 # the output will be in the following format:    
 # mname \t ind1 \t ind2 \t (...)
@@ -236,12 +247,12 @@ conda activate ai2
 
 # Transpose chromosome-separated imputed .genotypes files, and drop marker names on all matrices but the first to prepare for recombining the files back together
 01_scripts/impute_rebuild_chr_lightweight.R
-# produces: 13_impute_compare/*.genotypes_transposed_to_combine.txt
+# produces: 05_compare/*.genotypes_transposed_to_combine.txt
 
 # Combine imputed, transposed, chr-separated files back together, then add marker names back in, based on the input ai2 file (before chromosome separation) 
 #   note: before running, update the variable for your input original ai2 file
 01_scripts/combine_transposed_ai2_output_and_mnames.sh
-# produces: 13_impute_compare/all_chr_combined.txt
+# produces: 05_compare/all_chr_combined.txt
 
 ```
 
@@ -249,10 +260,9 @@ conda activate ai2
 Evaluate results by comparing the imputed data with the 10X 'empirical' data:     
 ```
 # Obtain 10X bcf file 
-cp -l ~/Documents/cgig/CHR8_wgrs/wgrs_workflow_offspring/05_genotyping/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1.bcf ./13_impute_compare/
+cp -l 02_input_data/offspring_hd/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_offspring_only.bcf 05_compare/
 
-# Use bash script to pull out genotypes into text file in ai2 format
-# Edit the following script to point to the above bcf file, and run
+# Convert from BCF to ai2 after updating the path and filename
 01_scripts/bcf_to_ai2.sh
 
 # Compare the imputed and empirical ai2 file genotypes by chromosome using: 
