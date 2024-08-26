@@ -15,6 +15,46 @@ Note: do not copy links of the VCF files, but rather full files.
 
 
 ### 01. Prepare input data ### 
+
+#### wgrs data (HD data) ####
+If the parent and offspring wgrs data were all genotyped together, it will be necessary to separate the parent and offspring data. The BCF file below is the example here.           
+
+Separate parents and offspring; parents:      
+```
+# Create a parent samplefile
+bcftools query -l 02_input_data/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1.bcf | grep -vE '^ASY2' - > 02_input_data/parent_hd_samplelist.txt
+# ...note: if there are any other parents you want to remove from the dataset, delete them from this select list here.     
+
+# Select only the parents from the dataset
+bcftools view -S 02_input_data/parent_hd_samplelist.txt 02_input_data/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1.bcf -Ob -o 02_input_data/parent_hd/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_parents_only.bcf
+
+# Rename 
+# ...manually add desired samplenames to 02_input_data/parent_hd_samplelist.txt in space-separated format
+bcftools reheader --samples 02_input_data/parent_hd_samplelist.txt -o 02_input_data/parent_hd/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_parents_only_rename.bcf 02_input_data/parent_hd/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_parents_only.bcf
+
+# Index
+bcftools index 02_input_data/parent_hd/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_parents_only_rename.bcf
+```
+
+Separate parents and offspring; offspring:      
+```
+# Create an offspring samplefile
+bcftools query -l 02_input_data/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1.bcf | grep -E '^ASY2' - > 02_input_data/offspring_hd_samplelist.txt
+# ...note: if there are any other offspring you want to remove from the dataset, delete them from this select list here
+
+# Select only the offspring from the dataset
+bcftools view -S 02_input_data/offspring_hd_samplelist.txt 02_input_data/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1.bcf -Ob -o 02_input_data/offspring_hd/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_offspring_only.bcf
+
+# Rename
+# ...manually add desired samplenames to the offspring samplefile in space-sep format
+awk -F"-" '{ print $0 " " $1"-"$2"-"$3"-"$4 }' 02_input_data/offspring_hd_samplelist.txt > 02_input_data/offspring_hd_samplelist_for_rename.txt
+
+bcftools reheader --samples 02_input_data/offspring_hd_samplelist_for_rename.txt -o 02_input_data/offspring_hd/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_offspring_only_rename.bcf 02_input_data/offspring_hd/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_offspring_only.bcf
+
+# Index
+bcftools index 02_input_data/offspring_hd/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_offspring_only_rename.bcf
+```
+
 #### Separating and renaming the LD BCF file ####
 If the input LD data is from amplitools _de novo_ genotyping of all parents and offspring together, it may be necessary to rename and separate the input BCF file. Put it in `02_input_data` root folder, and take the following steps (as an example):      
 ```
@@ -41,70 +81,6 @@ bcftools view -S 02_input_data/parent_samplelist.txt 02_input_data/mpileup_calls
 bcftools index 02_input_data/parent_ld/parent_panel.bcf
 ```
 
-
-##### Combining offspring panel data #####
-If the offspring data came as multiple VCF files, merge as follows:      
-```
-# decompress the files, then compress with bgzip
-gunzip 10_impute_input/offspring_panel/*.gz
-ls 10_impute_input/offspring_panel/*.vcf | xargs -n 1 bgzip
-
-# index the files with bcftools
-ls 10_impute_input/offspring_panel/*.vcf.gz | xargs -n 1 bcftools index
-
-# create filelist for merging all VCF files
-ls -1 10_impute_input/offspring_panel/*.vcf.gz > 10_impute_input/offspring_panel/sample_list.txt
-
-# merge all VCF files
-bcftools merge --file-list 10_impute_input/offspring_panel/sample_list.txt -Ov -o 10_impute_input/offspring_panel.vcf
-
-```
-
-##### Parent panel data #####
-If the parent data came as multiple VCF files, merge as follows:       
-```
-# decompress the files, then compress with bgzip
-gunzip 10_impute_input/parent_panel/*.gz
-ls 10_impute_input/parent_panel/*.vcf | xargs -n 1 bgzip
-
-# index the files with bcftools
-ls 10_impute_input/parent_panel/*.vcf.gz | xargs -n 1 bcftools index
-
-# create filelist for merging all VCF files
-ls -1 10_impute_input/parent_panel/*.vcf.gz > 10_impute_input/parent_panel/sample_list.txt
-
-# merge all VCF files
-bcftools merge --file-list 10_impute_input/parent_panel/sample_list.txt -Ov -o 10_impute_input/parent_panel.vcf
-
-```
-note: these have novel variants also, which will need to be removed eventually (below)    
-
-
-##### Separate wgrs data #####
-If the parent and offspring wgrs data were all genotyped together, you will need to create a parent-only subset of the data, then index as follows:      
-
-```
-# Create a parent samplefile
-bcftools query -l 02_input_data/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1.bcf | grep -vE '^ASY2' - > 02_input_data/parent_hd_samplelist.txt
-
-# Select only the parents from the dataset
-- #todo
-
-# Index
-- #todo
-```
-
-Create an offspring-only wgrs datafile:     
-```
-# Identify sample names for offspring
-bcftools query -l 02_input_data/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1.bcf | grep -E '^ASY2' - > 02_input_data/offspring_hd_samplelist.txt
-
-# Subset
-bcftools view -S 02_input_data/offspring_hd_samplelist.txt 02_input_data/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1.bcf -Ob -o 02_input_data/offspring_hd/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_offspring_only.bcf
-
-# Index
-
-```
 
 ### 02. Exclude panel loci from parent wgrs data ###
 Before merging the parent wgrs and panel loci, we need to remove all overlapping loci from the wgrs data. While doing this, it is possible to check for concordance in the overlapping loci.   
