@@ -55,30 +55,51 @@ bcftools reheader --samples 02_input_data/offspring_hd_samplelist_for_rename.txt
 bcftools index 02_input_data/offspring_hd/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_offspring_only_rename.bcf
 ```
 
-#### Separating and renaming the LD BCF file ####
-If the input LD data is from amplitools _de novo_ genotyping of all parents and offspring together, it may be necessary to rename and separate the input BCF file. Put it in `02_input_data` root folder, and take the following steps (as an example):      
-```
-# Create a renaming file
-bcftools query -l 02_input_data/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2.bcf > 02_input_data/sample_names_ld.csv
-# ...then manually annotate the file by adding a space and giving the new name for each sample
+#### panel data (LD data) ####
+If the parent and offspring panel data were all genotyped together (e.g., from amplitools _de novo_ genotyping), it will be necessary to separate the parent and offspring data. Put it in `02_input_data` root folder, and take the following steps (as an example):      
 
-# Rename samples in BCF file
-bcftools reheader --samples 02_input_data/sample_names_ld.csv -o 02_input_data/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_rename.bcf 02_input_data/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2.bcf
+Separate parents and offspring; parents:      
+```
+# Create a parent samplefile (in this example, identified by string 'rawlib')
+bcftools query -l 02_input_data/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2.bcf | grep 'rawlib' - > 02_input_data/parent_ld_samplelist.txt
+# ...note: if there are any parents you want to remove, delete from this samplelist
+
+# Select only the parents from the dataset
+bcftools view -S 02_input_data/parent_ld_samplelist.txt 02_input_data/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2.bcf -Ob -o 02_input_data/parent_ld/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_parents_only.bcf
+
+# Rename
+# ...manually add desired samplenames to 02_input_data/parent_ld_samplelist.txt in space-separated format
+bcftools reheader --samples 02_input_data/parent_ld_samplelist.txt -o 02_input_data/parent_ld/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_parents_only_rename.bcf 02_input_data/parent_ld/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_parents_only.bcf
+
+# Index
+bcftools index 02_input_data/parent_ld/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_parents_only_rename.bcf
+```
+
+Separate parents and offspring; offspring:    
+```
+# Create an offspring samplefile (in this example, identified by absence of 'rawlib')
+bcftools query -l 02_input_data/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2.bcf | grep -vE 'rawlib' - > 02_input_data/offspring_ld_samplelist.txt
+# ...note: if there are any offspring you want to remove, delete from this samplelist
+
+# Select only the offspring from the dataset
+bcftools view -S 02_input_data/offspring_ld_samplelist.txt 02_input_data/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2.bcf -Ob -o 02_input_data/offspring_ld/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_offspring_only.bcf
 
 # Separate parents and offspring LD data, here offspring noted by 'ASY2' in samplename
 bcftools query -l 02_input_data/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_rename.bcf | grep -E '^ASY2' - > 02_input_data/offspring_samplelist.txt
 
-bcftools query -l 02_input_data/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_rename.bcf | grep -vE '^ASY2' - > 02_input_data/parent_samplelist.txt
+# Rename
+# ...manually create 02_input_data/offspring_ld_samplelist_for_rename.txt
+bcftools reheader --samples 02_input_data/offspring_ld_samplelist_for_rename.txt -o 02_input_data/offspring_ld/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_offspring_only_rename.bcf 02_input_data/offspring_ld/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_offspring_only.bcf
 
-# Obtain offspring only
-bcftools view -S 02_input_data/offspring_samplelist.txt 02_input_data/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_rename.bcf -Ob -o 02_input_data/offspring_ld/offspring_panel.bcf
+# Special case: if need to delete based on the rename file, follow next steps: 
+bcftools query -l 02_input_data/offspring_ld/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_offspring_only_rename.bcf | grep -vE '_115_' - > 02_input_data/offspring_ld_samplelist_for_rename_drop_115.txt
 
-bcftools index 02_input_data/offspring_ld/offspring_panel.bcf
+bcftools view -S 02_input_data/offspring_ld_samplelist_for_rename_drop_115.txt 02_input_data/offspring_ld/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_offspring_only_rename.bcf -Ob -o 02_input_data/offspring_ld/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_offspring_only_rename_no_115.bcf
+# ...then put the original all renamed sample into a 'backup, all sample' folder, and rename the above bcf without the '_no_115' designation to fit with the rest of the analysis.    
 
-# Obtain parents only
-bcftools view -S 02_input_data/parent_samplelist.txt 02_input_data/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_rename.bcf -Ob -o 02_input_data/parent_ld/parent_panel.bcf
 
-bcftools index 02_input_data/parent_ld/parent_panel.bcf
+# Index
+bcftools index 02_input_data/offspring_ld/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_offspring_only_rename.bcf
 ```
 
 
