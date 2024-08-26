@@ -1,4 +1,5 @@
 # Read in two VCF files that have the same samples and check concordance
+# requires that the two VCF files have the same names
 # B. Sutherland (2024-08-19)
 
 ### Front Matter ####
@@ -45,50 +46,37 @@ panel.vcf <- read.vcfR(file = input_panel_vcf.FN)
 
 # Extract genotypes, file 1
 wgrs_gt.df <- extract.gt(x = wgrs.vcf, element = "GT")
+wgrs_gt.df <- as.data.frame(wgrs_gt.df)
 wgrs_gt.df[1:5,1:2]
-
-# Rename colnames to short form ids
-# TODO: this would not be needed if before running ensured the compared files had the same names
-colnames.df <- as.data.frame(colnames(wgrs_gt.df))
-colnames.df <- separate(data = colnames.df, col = "colnames(wgrs_gt.df)", into = c("fam", "ind", "extra")
-                          , sep = "-")
-head(colnames.df)
-colnames(wgrs_gt.df)  <- paste0(colnames.df$fam, "-", colnames.df$ind)
-rm(colnames.df)
-colnames(wgrs_gt.df) <- gsub(pattern = "CH8-001", replacement = "65-8F", x = colnames(wgrs_gt.df))
-colnames(wgrs_gt.df) <- gsub(pattern = "CHR8-005", replacement = "58-9F", x = colnames(wgrs_gt.df))
-colnames(wgrs_gt.df)
-
 colnames(wgrs_gt.df) <- paste0(colnames(wgrs_gt.df), "_wgrs")
 colnames(wgrs_gt.df)
-
+wgrs_gt.df$mname <- rownames(wgrs_gt.df)
+wgrs_gt.df[1:5,]
 
 # Extract genotypes, file 2
-# TODO: use file1 and file2 rather than wgrs and panel
 panel_gt.df <- extract.gt(x = panel.vcf, element = "GT")
+panel_gt.df <- as.data.frame(panel_gt.df)
 panel_gt.df[1:5,1:2]
-
-# Rename colnames to short form ids
-# TODO: this would not be needed if before running ensured the compared files had the same names
-colnames(panel_gt.df)
-colnames(panel_gt.df) <- gsub(pattern = "_", replacement = "-", x = colnames(panel_gt.df))
 colnames(panel_gt.df) <- paste0(colnames(panel_gt.df), "_panel")
 colnames(panel_gt.df)
+panel_gt.df$mname <- rownames(panel_gt.df)
+panel_gt.df[1:5,]
+
 
 ### Join ####
-# TODO: if use merge, then the two files would technically not need the same rownames going in
-all_data.df <- cbind(wgrs_gt.df, panel_gt.df)
+all_data.df <- merge(x = wgrs_gt.df, y = panel_gt.df, by = "mname")
 all_data.df <- as.data.frame(all_data.df)
 dim(all_data.df)
-all_data.df$mname <- rownames(all_data.df)
 head(all_data.df)
+
+# Modify separator between chr and position to make it easier to separate
 all_data.df$mname <- gsub(pattern = "\\.1\\_", replacement = "\\.1__", x =  all_data.df$mname)
 
 # Sort by colname, then put mname first
 all_data.df <- all_data.df[ , order(colnames(all_data.df))]
 all_data.df <- all_data.df %>% 
   select("mname", everything())
-all_data.df[1:5,1:5]
+all_data.df[1:5,1:10]
 
 # Define chr
 chr <- unique(gsub(pattern = "__.*", replacement = "", x = all_data.df$mname))
@@ -239,7 +227,6 @@ for(i in 1:length(samples.vec)){
   
 }
 
-head(result.df)
 result.df
 
 
@@ -291,8 +278,8 @@ hist(x = result.df$prop.match, main = "", breaks = 10
        , xlab = paste0("Per sample proportion of typed loci concordant (", chr[c], ")")
        , las = 1
   )
-  #text(x = 0.67, y = 30, paste0(nrow(subset_data.df), " loci"))
-  dev.off()
+#text(x = 0.67, y = 30, paste0(nrow(subset_data.df), " loci"))
+dev.off()
   
 
 
