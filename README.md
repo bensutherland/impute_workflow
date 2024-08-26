@@ -97,35 +97,34 @@ bcftools query -l 02_input_data/offspring_ld/mpileup_calls_noindel5_miss0.2_SNP_
 bcftools view -S 02_input_data/offspring_ld_samplelist_for_rename_drop_115.txt 02_input_data/offspring_ld/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_offspring_only_rename.bcf -Ob -o 02_input_data/offspring_ld/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_offspring_only_rename_no_115.bcf
 # ...then put the original all renamed sample into a 'backup, all sample' folder, and rename the above bcf without the '_no_115' designation to fit with the rest of the analysis.    
 
-
 # Index
 bcftools index 02_input_data/offspring_ld/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_offspring_only_rename.bcf
 ```
 
 
 ### 02. Exclude panel loci from parent wgrs data ###
-Before merging the parent wgrs and panel loci, we need to remove all overlapping loci from the wgrs data. While doing this, it is possible to check for concordance in the overlapping loci.   
+Before merging parent wgrs and panel data, all overlapping loci between the two will be dropped from the wgrs dataset. Note: this will also give substrate for direct comparison of overlapping loci (see next section).     
 
 Separate loci into private or overlapping:     
 ```
 # prepare an output folder for bcftools isec
-mkdir 03_combine/isec_panel_and_wgrs
+mkdir 03_combine/isec_wgrs_and_panel
 
 # run isec to identify overlapping or private loci. Include flag '--collapse all' to consider overlap regardless of alleles.    
-bcftools isec --collapse all ./02_input_data/parent_hd/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_parents_only.bcf ./02_input_data/parent_ld/parent_panel.bcf -p 03_combine/isec_panel_and_wgrs/
+bcftools isec --collapse all 02_input_data/parent_hd/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_parents_only_rename.bcf 02_input_data/parent_ld/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_parents_only_rename.bcf -p 03_combine/isec_wgrs_and_panel/
 
 ## Interpretation:    
-# 0000.vcf = private to parent wgrs
-# 0001.vcf = private to parent panel
-# 0002.vcf = records from parent wgrs shared in both
-# 0003.vcf = records from parent panel shared in both
+# 0000.vcf = wgrs, private
+# 0001.vcf = panel, private
+# 0002.vcf = wgrs, shared
+# 0003.vcf = panel, shared
 
-# Save the private records to parent wgrs
-bcftools view 03_combine/isec_panel_and_wgrs/0000.vcf -Ob -o 03_combine/parent_wgrs_only.bcf
+# Save the wgrs, private VCF file as BCF file
+bcftools view 03_combine/isec_wgrs_and_panel/0000.vcf -Ob -o 03_combine/parent_wgrs_only.bcf
 
-# Also save the overlapped loci for concordance evaluation
-cp -l 03_combine/isec_panel_and_wgrs/0002.vcf 03_combine/parent_wgrs_shared_in_both.vcf
-cp -l 03_combine/isec_panel_and_wgrs/0003.vcf 03_combine/parent_panel_shared_in_both.vcf
+# Save the overlapped loci as VCF files for concordance evaluation (next section)
+cp -l 03_combine/isec_wgrs_and_panel/0002.vcf 03_combine/parent_wgrs_shared_in_both.vcf
+cp -l 03_combine/isec_wgrs_and_panel/0003.vcf 03_combine/parent_panel_shared_in_both.vcf
 
 # Delete the isec folder to save space
 
@@ -138,43 +137,34 @@ cp -l 03_combine/isec_panel_and_wgrs/0003.vcf 03_combine/parent_panel_shared_in_
 ### 04. Concatenate parent panel loci into parent wgrs only data ###
 Prepare the parent wgrs-only file to be combined:       
 ```
-# Create a renaming file 
-bcftools query -l 03_combine/parent_wgrs_only.bcf > 03_combine/parent_wgrs_samplenames.csv
-# ...then manually annotate by adding a space and giving the new name for the sample 
-
-# Rename in the BCF file
-bcftools reheader --samples 03_combine/parent_wgrs_samplenames.csv -o 03_combine/parent_wgrs_only_renamed.bcf 03_combine/parent_wgrs_only.bcf
-
-# Create sorted text file of new names
-bcftools query -l 03_combine/parent_wgrs_only_renamed.bcf | sort > 03_combine/parent_wgrs_samplenames_sorted.csv
+# Create a sorted samplelist text file
+bcftools query -l 03_combine/parent_wgrs_only.bcf | sort > 03_combine/parent_wgrs_samplenames_sorted.txt
 
 # Sort in the BCF file
-bcftools view -S 03_combine/parent_wgrs_samplenames_sorted.csv 03_combine/parent_wgrs_only_renamed.bcf -Ob -o 03_combine/parent_wgrs_only_renamed_sorted.bcf
+bcftools view -S 03_combine/parent_wgrs_samplenames_sorted.txt 03_combine/parent_wgrs_only.bcf -Ob -o 03_combine/parent_wgrs_only_sorted.bcf
 
 # Index 
-bcftools index 11_impute_combine/parent_wgrs_only_renamed_sorted.vcf.gz
+bcftools index 03_combine/parent_wgrs_only_sorted.bcf
 ```
 
 Prepare the parent panel data to be combined:       
 ```
 # Copy the parent panel data into the combined folder
-cp -l 02_input_data/parent_ld/parent_panel.bcf ./03_combine/
-
-# No need to rename, but can follow the above instructions if needed
+cp -l 02_input_data/parent_ld/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_parents_only_rename.bcf 03_combine/
 
 # Create sorted text file of names 
-bcftools query -l 03_combine/parent_panel.bcf | sort > 03_combine/parent_panel_samplenames_sorted.csv
+bcftools query -l 03_combine/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_parents_only_rename.bcf | sort > 03_combine/parent_panel_samplenames_sorted.txt
 
 # Sort in the BCF file
-bcftools view -S 03_combine/parent_panel_samplenames_sorted.csv 03_combine/parent_panel.bcf -Ob -o 03_combine/parent_panel_sorted.bcf
+bcftools view -S 03_combine/parent_panel_samplenames_sorted.txt 03_combine/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_parents_only_rename.bcf -Ob -o 03_combine/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_parents_only_rename_sorted.bcf
 
 # index
-bcftools index 03_combine/parent_panel_sorted.bcf
+bcftools index 03_combine/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_parents_only_rename_sorted.bcf
 ```
 
 Combine the parent data with bcftools concat
 ```
-bcftools concat --allow-overlaps 03_combine/parent_wgrs_only_renamed_sorted.bcf 03_combine/parent_panel_sorted.bcf -Ob -o 03_combine/parent_wgrs_and_panel.bcf
+bcftools concat --allow-overlaps 03_combine/parent_wgrs_only_sorted.bcf 03_combine/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_parents_only_rename_sorted.bcf -Ob -o 03_combine/parent_wgrs_and_panel.bcf
 
 # Index
 bcftools index 03_combine/parent_wgrs_and_panel.bcf
@@ -187,7 +177,7 @@ If you need to identify which offspring panel data can be merged (i.e., if genot
 Combine the wgrs+panel parent data with the panel offspring data
 ```
 # Merge parent wgrs+panel with offspring panel
-bcftools merge 03_combine/parent_wgrs_and_panel.bcf 02_input_data/offspring_ld/offspring_panel.bcf -Ob -o 03_combine/all_inds_wgrs_and_panel.bcf
+bcftools merge 03_combine/parent_wgrs_and_panel.bcf 02_input_data/offspring_ld/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_offspring_only_rename.bcf -Ob -o 03_combine/all_inds_wgrs_and_panel.bcf
 
 # Remove multiallelic if present
 bcftools view --max-alleles 2 03_combine/all_inds_wgrs_and_panel.bcf -Ob -o 03_combine/all_inds_wgrs_and_panel_biallele.bcf
@@ -207,7 +197,7 @@ The data is now all in a single BCF file and is ready for the imputation process
 
 Prepare a pedigree file:      
 ```
-bcftools query -l 04_impute/all_inds_wgrs_and_panel_biallele.bcf > 04_impute/pedigree.txt
+bcftools query -l 04_impute/all_inds_wgrs_and_panel_biallele.bcf > 04_impute/pedigree.csv
 
 # Annotate the above file as follows:    
 # <indiv> <sire> <dam>     
@@ -229,7 +219,7 @@ Format from BCF to AlphaImpute2:
 
 # Split ai2 matrix into individual chr. This requires setting the input filename, and an identifiable chromosome string.
 01_scripts/prep_geno_matrix_for_ai2.R   
-# output will be in 12_impute_impute/ai2_input_<NC_047559.1>.txt, one file per chr 
+# output will be in 04_impute/ai2_input_<NC_047559.1>.txt, one file per chr 
 
 ```
 
@@ -240,7 +230,7 @@ conda activate ai2
 
 # Run AlphaImpute2 on chromosome-separated datafiles
 01_scripts/run_ai2.sh
-# produces: 12_impute_impute/ai2_input_<NC_047559.1>.genotypes and *.haplotypes
+# produces: 04_impute/ai2_input_<NC_047559.1>.genotypes and *.haplotypes
 
 # Transpose chromosome-separated imputed .genotypes files, and drop marker names on all matrices but the first to prepare for recombining the files back together
 01_scripts/impute_rebuild_chr_lightweight.R
@@ -257,7 +247,7 @@ conda activate ai2
 Evaluate results by comparing the imputed data with the 10X 'empirical' data:     
 ```
 # Obtain 10X bcf file 
-cp -l 02_input_data/offspring_hd/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_offspring_only.bcf 05_compare/
+cp -l 02_input_data/offspring_hd/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_offspring_only_rename.bcf ./05_compare/
 
 # Convert from BCF to ai2 after updating the path and filename
 01_scripts/bcf_to_ai2.sh
