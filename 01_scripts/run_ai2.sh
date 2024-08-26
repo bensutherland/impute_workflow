@@ -1,13 +1,13 @@
 #!/bin/bash
 # Run ai2 on individual chr prepared by 01_scripts/prep_geno_matrix_for_ai2.R
 # B. Sutherland (2024-07-22)
-
 # note: need to initiate ai2 in conda enviro first
+# note: pedigree.csv is a space-delimited file
 
 # Set user variables
 INPUT_FOLDER="04_impute"
 INPUT_PATTERN="ai2_input_"
-PEDIGREE="pedigree.txt"
+PEDIGREE="pedigree.csv"
 
 # Run ai2 iteratively
 for file in $(ls -1 "$INPUT_FOLDER"/"$INPUT_PATTERN"*.txt)
