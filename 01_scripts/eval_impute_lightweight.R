@@ -24,7 +24,7 @@ rm(current.path)
 
 # Set variables
 offspring_imputed_ai2.FN     <- "05_compare/all_chr_combined.txt" # imputed
-offspring_10X_ai2.FN         <- "05_compare/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_offspring_only_ai2.txt" # 10X genotypes
+offspring_10X_ai2.FN         <- "05_compare/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_offspring_only_rename_ai2.txt" # 10X genotypes
 subsampled <- FALSE # TRUE or FALSE whether this is subsampled data from all high density
 output_folder <- "05_compare"
 
@@ -35,6 +35,7 @@ imputed.df <- fread(file = offspring_imputed_ai2.FN, sep = "\t")
 dim(imputed.df)
 imputed.df <- as.data.frame(imputed.df) # convert to df
 imputed.df[1:5,1:5]
+colnames(imputed.df)
 
 # Read in empirical data (10X)
 empirical.df <- fread(file = offspring_10X_ai2.FN, sep = "\t")
@@ -77,25 +78,14 @@ if(subsampled == TRUE){
 }
 
 ## Make sample names match for empirical data
-#colnames(empirical.df)
+# /NOTE: no longer doing this, samples should already match #
+# /NOTE: also removes requirement for checking for duplicate samples, these are dropped earlier #
 head(colnames(empirical.df))
+head(colnames(imputed.df))
 
-# Remove everything after the first underscore
-colnames.df <- gsub(pattern = "_.*", replacement = "", x = colnames(empirical.df))
-colnames.df <- as.data.frame(colnames.df)
-colnames.df <- colnames.df[2:nrow(colnames.df), ] # drop mname for now
-colnames.df <- as.data.frame(colnames.df)
-colnames.df <- separate(data = colnames.df, col = "colnames.df", into = c("assay", "fam", "rep", "ind", "noise"), sep = "-", remove = T)
-colnames.df$name <- paste0(colnames.df$assay, "_", colnames.df$fam, "_", colnames.df$rep, "_", colnames.df$ind)
-colnames(empirical.df) <- c("mname", colnames.df$name)
-rm(colnames.df)
-table(duplicated(colnames(empirical.df))) # there are two cols that are duplicated! 
-colnames(empirical.df)[duplicated(colnames(empirical.df))]
-# Remove the duplicated columns
-empirical.df <- empirical.df[, !duplicated(colnames(empirical.df))]
+# One remaining adjustment, but eventually will be removed
+colnames(empirical.df) <- gsub(pattern = "-", replacement = "_", x = colnames(empirical.df))
 
-head(colnames(empirical.df))
-dim(empirical.df)
 
 #### 03. Matching ####
 ## What columns match between the two
@@ -129,7 +119,7 @@ empirical.df[1:5,1:5]
 
 
 #### 05. Add unique identifier to separate the two datasets
-colnames(imputed.df) <- paste0(colnames(imputed.df), "_imputed")
+colnames(imputed.df)   <- paste0(colnames(imputed.df), "_imputed")
 colnames(empirical.df) <- paste0(colnames(empirical.df), "_empirical")
 
 
