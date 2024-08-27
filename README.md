@@ -4,22 +4,19 @@ Imputation workflow for working with amplicon panel and wgrs data
 ### 00. Getting started ###
 Clone the present repo, all commands will occur in the repo unless indicated.    
 
-Requires the following inputs put in `02_input_data`, each in its own subfolder as labeled:      
-- parent wgrs (20X) filtered genotypes BCF file from `wgrs_workflow` in `parent_hd`   
-- parent amplicon panel individual vcf.gz or grouped bcf files in `parent_ld`   
-- offspring amplicon panel individual vcf.gz or grouped bcf files `offspring_ld`   
+Requires the following inputs put in `02_input_data`:      
+- high-density (wgrs) BCF file
+- low-density (panel) BCF file
 
-Note: only include a single replicate per individual by the panel (pick the best replicate)   
-Note: each type of amp panel data needed its own subfolder because they are named by the barcode and therefore will overlap with other datasets.     
-Note: do not copy links of the VCF files, but rather full files.    
+The default pipeline assumes that the high-density and low-density data were generated independently, and that within each are parents and offspring genotyped together. Some support of different inputs is provided (#TODO, link).     
+
+Note: no duplicate individuals (i.e., tech replicates) should be present.    
 
 
 ### 01. Prepare input data ### 
-
 #### wgrs data (HD data) ####
-If the parent and offspring wgrs data were all genotyped together, it will be necessary to separate the parent and offspring data. The BCF file below is the example here.           
-
-Separate parents and offspring; parents:      
+##### Separate and rename parents and offspring #####   
+Separate and rename parents:      
 ```
 # Create a parent samplefile
 bcftools query -l 02_input_data/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1.bcf | grep -vE '^ASY2' - > 02_input_data/parent_hd_samplelist.txt
@@ -34,9 +31,12 @@ bcftools reheader --samples 02_input_data/parent_hd_samplelist.txt -o 02_input_d
 
 # Index
 bcftools index 02_input_data/parent_hd/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_parents_only_rename.bcf
+
+# Clean space
+rm 02_input_data/parent_hd/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_parents_only.bcf
 ```
 
-Separate parents and offspring; offspring:      
+Separate and rename offspring:      
 ```
 # Create an offspring samplefile
 bcftools query -l 02_input_data/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1.bcf | grep -E '^ASY2' - > 02_input_data/offspring_hd_samplelist.txt
@@ -53,12 +53,14 @@ bcftools reheader --samples 02_input_data/offspring_hd_samplelist_for_rename.txt
 
 # Index
 bcftools index 02_input_data/offspring_hd/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_offspring_only_rename.bcf
+
+# Clean space
+rm 02_input_data/offspring_hd/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_offspring_only.bcf
 ```
 
 #### panel data (LD data) ####
-If the parent and offspring panel data were all genotyped together (e.g., from amplitools _de novo_ genotyping), it will be necessary to separate the parent and offspring data. Put it in `02_input_data` root folder, and take the following steps (as an example):      
-
-Separate parents and offspring; parents:      
+##### Separate and rename parents and offspring #####   
+Separate and rename parents:      
 ```
 # Create a parent samplefile (in this example, identified by string 'rawlib')
 bcftools query -l 02_input_data/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2.bcf | grep 'rawlib' - > 02_input_data/parent_ld_samplelist.txt
@@ -75,7 +77,7 @@ bcftools reheader --samples 02_input_data/parent_ld_samplelist.txt -o 02_input_d
 bcftools index 02_input_data/parent_ld/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_parents_only_rename.bcf
 ```
 
-Separate parents and offspring; offspring:    
+Separate and rename offspring:    
 ```
 # Create an offspring samplefile (in this example, identified by absence of 'rawlib')
 bcftools query -l 02_input_data/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2.bcf | grep -vE 'rawlib' - > 02_input_data/offspring_ld_samplelist.txt
@@ -84,18 +86,9 @@ bcftools query -l 02_input_data/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_bi
 # Select only the offspring from the dataset
 bcftools view -S 02_input_data/offspring_ld_samplelist.txt 02_input_data/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2.bcf -Ob -o 02_input_data/offspring_ld/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_offspring_only.bcf
 
-# Separate parents and offspring LD data, here offspring noted by 'ASY2' in samplename
-bcftools query -l 02_input_data/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_rename.bcf | grep -E '^ASY2' - > 02_input_data/offspring_samplelist.txt
-
 # Rename
 # ...manually create 02_input_data/offspring_ld_samplelist_for_rename.txt
 bcftools reheader --samples 02_input_data/offspring_ld_samplelist_for_rename.txt -o 02_input_data/offspring_ld/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_offspring_only_rename.bcf 02_input_data/offspring_ld/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_offspring_only.bcf
-
-# Special case: if need to delete based on the rename file, follow next steps: 
-bcftools query -l 02_input_data/offspring_ld/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_offspring_only_rename.bcf | grep -vE '_115_' - > 02_input_data/offspring_ld_samplelist_for_rename_drop_115.txt
-
-bcftools view -S 02_input_data/offspring_ld_samplelist_for_rename_drop_115.txt 02_input_data/offspring_ld/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_offspring_only_rename.bcf -Ob -o 02_input_data/offspring_ld/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_offspring_only_rename_no_115.bcf
-# ...then put the original all renamed sample into a 'backup, all sample' folder, and rename the above bcf without the '_no_115' designation to fit with the rest of the analysis.    
 
 # Index
 bcftools index 02_input_data/offspring_ld/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_offspring_only_rename.bcf
@@ -123,18 +116,20 @@ bcftools isec --collapse all 02_input_data/parent_hd/mpileup_calls_noindel5_miss
 bcftools view 03_combine/isec_wgrs_and_panel/0000.vcf -Ob -o 03_combine/parent_wgrs_only.bcf
 
 # Save the overlapped loci as VCF files for concordance evaluation (next section)
-cp -l 03_combine/isec_wgrs_and_panel/0002.vcf 03_combine/parent_wgrs_shared_in_both.vcf
-cp -l 03_combine/isec_wgrs_and_panel/0003.vcf 03_combine/parent_panel_shared_in_both.vcf
+cp -l 03_combine/isec_wgrs_and_panel/0002.vcf 05_compare/parent_wgrs_shared_in_both.vcf
+cp -l 03_combine/isec_wgrs_and_panel/0003.vcf 05_compare/parent_panel_shared_in_both.vcf
 
 # Delete the isec folder to save space
 
 ```
 
-### 03. Inspect concordance of shared loci in parents ###
+### 0X. Inspect concordance of shared loci in parents and offspring ###
 - #TODO 
+- # do the above again with offspring wgrs and panel, then save out as above into `05_compare`  
+- #TODO: move this down
+  
 
-
-### 04. Concatenate parent panel loci into parent wgrs only data ###
+### 03. Concatenate parent panel loci into parent wgrs only data ###
 Prepare the parent wgrs-only file to be combined:       
 ```
 # Create a sorted samplelist text file
@@ -171,9 +166,7 @@ bcftools index 03_combine/parent_wgrs_and_panel.bcf
 ```
 
 
-### 05. Merge parent wgrs and panel data with offspring panel data ###
-If you need to identify which offspring panel data can be merged (i.e., if genotyping was not together), see #TODO README.     
-
+### 04. Merge parent wgrs and panel data with offspring panel data ###
 Combine the wgrs+panel parent data with the panel offspring data
 ```
 # Merge parent wgrs+panel with offspring panel
@@ -189,10 +182,8 @@ cp -l 03_combine/all_inds_wgrs_and_panel_biallele.bcf ./04_impute/
 bcftools index 04_impute/all_inds_wgrs_and_panel_biallele.bcf
 ```
 
-- #TODO: add links to optional README approaches 
 
-
-### 06. Imputation ###
+### 05. Imputation ###
 The data is now all in a single BCF file and is ready for the imputation process.     
 
 Prepare a pedigree file:      
@@ -205,34 +196,27 @@ bcftools query -l 04_impute/all_inds_wgrs_and_panel_biallele.bcf > 04_impute/ped
 # save as space-delimited    
 ```
 
-Format from BCF to AlphaImpute2:       
+Imputation with AlphaImpute2:       
 ```
-# Prepare ai2 matrix by building a header, and extracting info from the BCF, and converting to ai2 format
+# Convert from BCF file to AlphaImpute2 format
 ./01_scripts/bcf_to_ai2.sh
 # produces: 04_impute/<input_filename>_ai2.txt
-
-# the output will be in the following format:    
-# mname \t ind1 \t ind2 \t (...)
-# NC_047559.1 2945 \t 0 \t 0 \t 1 \t 9 (...)
-# (...)
+# in format:  mname \t ind1 \t ind2 \t (...)
+#             NC_047559.1 2945 \t 0 \t 0 \t 1 \t 9 (...)
 # where 0, 1, 2 are the number of alt alleles, and 9 is missing data  
 
-# Split ai2 matrix into individual chr. This requires setting the input filename, and an identifiable chromosome string.
+# Separate ai2 matrix into individual chr. Set input filename, and string to identify chromosomes.
 01_scripts/prep_geno_matrix_for_ai2.R   
-# output will be in 04_impute/ai2_input_<NC_047559.1>.txt, one file per chr 
+# produces: 04_impute/ai2_input_<NC_047559.1>.txt, one file per chr 
 
-```
-
-Run imputation:     
-```
 # initialize the conda environment
 conda activate ai2
 
 # Run AlphaImpute2 on chromosome-separated datafiles
 01_scripts/run_ai2.sh
-# produces: 04_impute/ai2_input_<NC_047559.1>.genotypes and *.haplotypes
+# produces: 04_impute/ai2_input_<NC_047559.1>.genotypes and .haplotypes
 
-# Transpose chromosome-separated imputed .genotypes files, and drop marker names on all matrices but the first to prepare for recombining the files back together
+# Transpose chr-sep .genotypes files, and prepare to combine back together
 01_scripts/impute_rebuild_chr_lightweight.R
 # produces: 05_compare/*.genotypes_transposed_to_combine.txt
 
@@ -242,6 +226,20 @@ conda activate ai2
 # produces: 05_compare/all_chr_combined.txt
 
 ```
+
+Imputation with FImpute3:    
+```
+# Use above script to convert from BCF file to AlphaImpute2 format (only need to do once)
+
+# Convert from ai2 to FImpute3 format
+./01_scripts/ai2_to_fimpute3.R
+./01_scripts/prep_fi3.sh
+
+# the first script creates a pedigree and a map file, as well as the parts needed for genotypes file
+
+```
+
+
 
 ### 07. Evaluate imputation ###
 Evaluate results by comparing the imputed data with the 10X 'empirical' data:     
