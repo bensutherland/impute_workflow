@@ -125,7 +125,7 @@ cp -l 03_combine/isec_wgrs_and_panel/0003.vcf 05_compare/parent_panel_shared_in_
 
 ### 0X. Inspect concordance of shared loci in parents and offspring ###
 - #TODO 
-- # do the above again with offspring wgrs and panel, then save out as above into `05_compare`  
+- #TODO: do the above again with offspring wgrs and panel, then save out as above into `05_compare`  
 - #TODO: move this down
   
 
@@ -237,6 +237,7 @@ Imputation with FImpute3:
 
 # the first script creates a pedigree and a map file, as well as the parts needed for genotypes file
 
+#TODO: add control file template
 ```
 
 
