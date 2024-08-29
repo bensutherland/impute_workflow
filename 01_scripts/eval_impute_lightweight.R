@@ -28,13 +28,15 @@ offspring_10X_ai2.FN         <- "05_compare/mpileup_calls_noindel5_miss0.1_SNP_q
 subsampled <- FALSE # TRUE or FALSE whether this is subsampled data from all high density
 output_folder <- "05_compare"
 
-offspring_imputed_fi3.FN <- "05_compare/fi3_output_converted.txt"
+offspring_imputed_fi3.FN <- "04_impute/fimpute/fi3_loci_by_inds_all_imputed_chr.txt"
 
-impute_software <- "fi3"
+# Select the imputation software target to use
+#impute_software <- "fi3" # fi3 or ai2
+impute_software <- "ai2"
 
 
 #### 01. Load data ####
-# Read in imputed data
+# Read in imputed data (ai2)
 imputed.df <- fread(file = offspring_imputed_ai2.FN, sep = "\t")
 dim(imputed.df)
 imputed.df <- as.data.frame(imputed.df) # convert to df
@@ -46,20 +48,9 @@ imputed_fi3.df <- fread(file = offspring_imputed_fi3.FN, sep = "\t")
 dim(imputed_fi3.df)
 imputed_fi3.df <- as.data.frame(imputed_fi3.df)
 imputed_fi3.df[1:5,1:5]
-colnames(imputed_fi3.df)[grep(pattern = "V1", x = colnames(imputed_fi3.df))] <- "ind"
+colnames(imputed_fi3.df)[grep(pattern = "V1", x = colnames(imputed_fi3.df))] <- "mname"
 imputed_fi3.df[1:5,1:5]
-# Make Fi3 look like ai2
-imputed_fi3.df <- t(imputed_fi3.df)
-imputed_fi3.df[1:5,1:5]
-colnames(imputed_fi3.df) <- imputed_fi3.df[1,]
-imputed_fi3.df <- imputed_fi3.df[2:nrow(imputed_fi3.df),]
-imputed_fi3.df <- as.data.frame(imputed_fi3.df)
-imputed_fi3.df$mname <- rownames(imputed_fi3.df)
-
-imputed_fi3.df <- imputed_fi3.df %>% 
-                    select("mname", everything())
 imputed_fi3.df$mname <- gsub(pattern = "__", replacement = " ", x = imputed_fi3.df$mname)
-rownames(imputed_fi3.df) <- seq(1:nrow(imputed_fi3.df))
 imputed_fi3.df[1:5,1:5]
 
 # Read in empirical data (10X)
@@ -67,6 +58,7 @@ empirical.df <- fread(file = offspring_10X_ai2.FN, sep = "\t")
 dim(empirical.df)
 empirical.df <- as.data.frame(empirical.df) # convert to df
 empirical.df[1:5,1:5]
+
 
 # Select impute software
 if(impute_software=="fi3"){
@@ -118,8 +110,8 @@ head(colnames(empirical.df))
 head(colnames(imputed.df))
 
 # One remaining adjustment, but eventually will be removed
-### TODO ####
-colnames(empirical.df) <- gsub(pattern = "-", replacement = "_", x = colnames(empirical.df))
+# ### TODO ####
+# colnames(empirical.df) <- gsub(pattern = "-", replacement = "_", x = colnames(empirical.df))
 
 
 #### 03. Matching ####
@@ -265,8 +257,9 @@ for(c in 1:length(chr)){
 
 
 # Write out all info
+# CHANGE TO FWRITE
 write.table(x = all_data.df, file = paste0(output_folder, "/all_loci_data_comparison.txt"), sep = "\t", row.names = F)
 
 
-
+# Note: store results as needed before re-running or else will lose data
 # end #
