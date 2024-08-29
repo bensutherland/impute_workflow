@@ -33,6 +33,7 @@ pedigree.df$Sex[grep(pattern = "F$", x = pedigree.df$Animal, perl = T)] <- "F"
 pedigree.df$Sex[grep(pattern = "M$", x = pedigree.df$Animal, perl = T)] <- "M"
 pedigree.df$Sex[is.na(pedigree.df$Sex)]  <- "M" # add M if unknown
 write.table(x = pedigree.df, file = "04_impute/fimpute/pedigree.csv", sep = " ", quote = F, row.names = F, col.names = T)
+# Only one pedigree file is needed, and can be reused for each chr
 
 # AI2
 ai2.df <- fread(file =  ai2_input.FN, sep = "\t")
@@ -65,24 +66,55 @@ Pos <- gsub(pattern = ".*\ ", replacement = "", x = ai2.df$mname)
 
 map.df <- cbind(SNP, Chr, Pos)
 map.df <- as.data.frame(map.df)
-map.df$Chip1 <- seq(1:nrow(map.df))
 head(map.df)
-dim(map.df)
 
-write.table(x = map.df, file = "04_impute/fimpute/map.txt", sep = " ", quote = F, row.names = F)
+# Make individual maps per chr
+chunk <- NULL; map.FN <- NULL
+for(i in 1:length(unique(map.df$Chr))){
+  
+  # Separate into chr
+  chunk <- map.df[map.df$Chr==i,]
+  chunk$Chip1 <- seq(1:nrow(chunk))
+  
+  # Create filename
+  map.FN <- paste0("04_impute/fimpute/map_chr_", i, ".txt")
+  
+  # Write out
+  write.table(x = chunk, file = map.FN, sep = " ", quote = F, row.names = F)
+  
+}
 
 
 #### Genotype file ####
-# Genotypes section
-ai2_no_mname.df <- ai2.df[, grep(pattern = "mname", x = colnames(ai2.df), invert = T)] # keep everything but mname
-ai2_no_mname.df[1:5,1:5]
-ai2_no_mname.df <- t(ai2_no_mname.df) # transpose
-ai2_no_mname.df[1:5,1:5]
+# Needs to be done per chr
+chrs_to_include <- unique(gsub(pattern = " .*", replacement = "", x = ai2.df$mname))
+chrs_to_include
 
-fwrite(x = ai2_no_mname.df, file = "04_impute/fimpute/genotypes_no_indname.txt", sep = "", quote = F, row.names = F, col.names = F)
+# Per chr
+geno_chunk <- NULL; geno_chunk_no_mname.df <- NULL; genotypes_no_mname.FN <- NULL
+for(i in 1:length(chrs_to_include)){
+  
+  print(paste0("Working on chr ", i))
+  
+  # select just the section of interest
+  geno_chunk <- ai2.df[grep(pattern = chrs_to_include[i], x = ai2.df$mname), ]
+  
+  # keep everything but mname
+  geno_chunk_no_mname.df <- geno_chunk[, grep(pattern = "mname", x = colnames(geno_chunk), invert = T)]
+  geno_chunk_no_mname.df <- t(geno_chunk_no_mname.df) # transpose
+  geno_chunk_no_mname.df[1:5,1:5]
+  
+  # Make filename
+  genotypes_no_mname.FN <- paste0("04_impute/fimpute/genotypes_no_indname_chr_", i, ".txt")
+  
+  # Write out the genotypes section
+  fwrite(x = geno_chunk_no_mname.df, file = genotypes_no_mname.FN, sep = "", quote = F, row.names = F, col.names = F)
+  
+}
 
+# The following two are constant, and can be reused per chr
 # Inds section
-indnames.df <- as.data.frame(rownames(ai2_no_mname.df))
+indnames.df <- as.data.frame(rownames(geno_chunk_no_mname.df))
 colnames(indnames.df) <- "ID"
 head(indnames.df)
 write.table(x = indnames.df, file = "04_impute/fimpute/indnames.txt", sep = " ", quote = F, row.names = F)
