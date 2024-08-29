@@ -1,4 +1,4 @@
-# Read in ai2 file and convert to FImputev.3 file
+# Read in ai2 file and convert to FImpute3 file
 # B. Sutherland (2024-08-26)
 
 ### Front Matter ####
@@ -67,15 +67,16 @@ map.df <- cbind(SNP, Chr, Pos)
 map.df <- as.data.frame(map.df)
 map.df$Chip1 <- seq(1:nrow(map.df))
 head(map.df)
+dim(map.df)
 
 write.table(x = map.df, file = "04_impute/fimpute/map.txt", sep = " ", quote = F, row.names = F)
 
 
 #### Genotype file ####
 # Genotypes section
-ai2_no_mname.df <- ai2.df[, grep(pattern = "mname", x = colnames(ai2.df), invert = T)]
+ai2_no_mname.df <- ai2.df[, grep(pattern = "mname", x = colnames(ai2.df), invert = T)] # keep everything but mname
 ai2_no_mname.df[1:5,1:5]
-ai2_no_mname.df <- t(ai2_no_mname.df)
+ai2_no_mname.df <- t(ai2_no_mname.df) # transpose
 ai2_no_mname.df[1:5,1:5]
 
 fwrite(x = ai2_no_mname.df, file = "04_impute/fimpute/genotypes_no_indname.txt", sep = "", quote = F, row.names = F, col.names = F)
@@ -93,5 +94,4 @@ head(chip.df)
 write.table(x = chip.df, file = "04_impute/fimpute/chip.txt", sep = " ", quote = F, row.names = F)
 
 
-# Go to terminal, follow instructions in 20_docs/README_FImpute.md
-
+# All component parts are prepared, now go to terminal and run 01_scripts/prep_fi3.sh

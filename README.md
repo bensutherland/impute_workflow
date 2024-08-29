@@ -233,11 +233,20 @@ Imputation with FImpute3:
 
 # Convert from ai2 to FImpute3 format
 ./01_scripts/ai2_to_fimpute3.R
+# ...this creates a pedigree and a map file, as well as the parts needed for genotypes file
+
 ./01_scripts/prep_fi3.sh
+# ...this edits and combines the parts needed for genotypes file
 
-# the first script creates a pedigree and a map file, as well as the parts needed for genotypes file
+# outputs: pedigree.csv, map.txt, genotype_file.txt
 
-#TODO: add control file template
+cp 00_archive/fimpute3_control_file_template.txt 04_impute/fimpute/fimpute_control_file.txt
+
+# change directory into the fimpute directory
+
+# run Fimpute3
+~/programs/FImpute3 ./fimpute_control_file.txt
+
 ```
 
 
