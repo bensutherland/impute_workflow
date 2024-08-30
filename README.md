@@ -232,23 +232,25 @@ conda activate ai2
 
 Imputation with FImpute3:    
 ```
-# Use above script to convert from BCF file to AlphaImpute2 format (only need to do once)
+# Note: the version of FImpute3 used here can only handle fewer than 2 M SNPs per run, so it is necessary to separate the input file into chromosomes before running, then run FImpute3 per chr (as with ai2).     
+
+# Note: the first step expects that the BCF file has already been converted to ai2 format 
 
 # Convert from ai2 to FImpute3 format
 ./01_scripts/ai2_to_fimpute3.R
-# ...this creates a pedigree and a map file, as well as the parts needed for genotypes file
+# ...this creates a pedigree file, a map file per chr, and parts needed for genotypes file per chr
 
-./01_scripts/prep_fi3.sh
-# ...this edits and combines the parts needed for genotypes file
+# Edit and combine components needed for per-chr genotypes files
+./01_scripts/prep_fi3_indiv_chr.sh
 
-# outputs: pedigree.csv, map.txt, genotype_file.txt
+# Prepare a control file and output run directory per chr 
+./01_scripts/prep_fi3_control_files_and_output_dir.sh
 
-cp 00_archive/fimpute3_control_file_template.txt 04_impute/fimpute/fimpute_control_file.txt
+# Run FImpute3 iteratively
+./01_scripts/run_fi3_iteratively.sh
 
-# change directory into the fimpute directory
-
-# run Fimpute3
-~/programs/FImpute3 ./fimpute_control_file.txt
+# Convert the FImpute3 output back to alphaimpute2 format for evaluation
+./01_scripts/fimpute3_to_ai2.R
 
 ```
 
