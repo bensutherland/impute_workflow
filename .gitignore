@@ -8,3 +8,4 @@
 *.pdf
 *#
 *.swp
+.Rhistory
