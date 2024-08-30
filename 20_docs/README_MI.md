@@ -1,65 +1,56 @@
-#### Optional: Remove Mendelian incompatibility loci ####
-Create a BCF file with parent and offspring panel-only loci:
+### Inspect and remove Mendelian incompatibility loci ###
+Mendelian incompatibilities in panel data may indicate several issues, one of which is null alleles occurring in the panel. In an imputation framework, null alleles may negatively impact the outcome of the imputation. Instructions to identify then remove loci with high frequencies of MI are given below.     
+
+### 01. Prepare input data ###
+This section expects that the panel data for parents and offspring is present in a BCF file, and that renaming may be necessary.   
+The input file here will be assumed as: `02_input_data/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2.bcf`    
 ```
-# Prepare an output folder for bcftools isec
-mkdir 12_impute_impute/isec_keep_only_panel_loci/
+# Prepare a renaming file
+bcftools query -l 02_input_data/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2.bcf > 02_input_data/samplelist.txt
+# ...manually create a space-separated renaming file
 
-# Index
-bcftools index 12_impute_impute/all_inds_wgrs_and_panel_no_multiallelic.bcf
-
-# run isec to identify loci shared between all loci and panel-only offspring loci
-bcftools isec ./12_impute_impute/all_inds_wgrs_and_panel_no_multiallelic.bcf 11_impute_combine/offspring
-_panel_roslin_rehead_hotspot_only_common_w_parents.vcf.gz -p 12_impute_impute/isec_keep_only_panel_loci/
-
-## Interpretation:
-# 0000.vcf = private to all_inds_wgrs_and_panel_no_multiallelic.bcf
-# 0001.vcf = private to offspring panel
-# 0002.vcf = records from all_inds shared in both
-# 0003.vcf = records from offspring panel shared in both
-
-# Save the records from all_inds shared in both
-cp -l 12_impute_impute/isec_keep_only_panel_loci/0002.vcf 12_impute_impute/all_inds_panel_only.vcf
+# Rename the samples in the BCF file
+bcftools reheader --samples 02_input_data/samplelist.txt -o 02_input_data/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_rename.bcf 02_input_data/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2.bcf
 
 ```
 
-Use bcftools plugin mendelian to scan for Mendelian inconsistencies
+Use bcftools plugin Mendelian to scan for Mendelian inconsistencies, create 'bad loci' BCF file
 ```
-# Use the pedigree file that has been annotated elsewhere in this pipeline, and format as needed for the plugin
-awk '{ print $3 "," $2 "," $1 }' 12_impute_impute_no_novel/pedigree_annot.csv | grep -vE '^0' - > 12_impute_impute/pedigree.csv
+# Prepare a trios text file as required by the plugin (i.e., mother1,father1,child1, 1 line per trio)  
+# ...if already generated a pedigree file, can use the following shortcut
+awk '{ print $3 "," $2 "," $1 }' 04_impute/pedigree.csv | grep -vE '^0' - > 06_screen_loci/trios.txt
 
 # Use bcftools plugin Mendelian to annotate the number of Mendelian errors (MERR) in the BCF file and output
-bcftools +mendelian 12_impute_impute/all_inds_panel_only.vcf -T 12_impute_impute/pedigree.csv --mode a -Ob -o 12_impute_impute/all_inds_panel_only_annot_MERR.vcf
+bcftools +mendelian 02_input_data/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_rename.bcf -T 06_screen_loci/trios.txt --mode a -Ob -o 06_screen_loci/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_rename_MERR.bcf
 
 # Observe the distribution of MERR
-bcftools query -f '%CHROM %POS %MERR\n' 12_impute_impute/all_inds_panel_only_annot_MERR.vcf | sort -nk 3 | less
+bcftools query -f '%CHROM %POS %MERR\n' 06_screen_loci/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_rename_MERR.bcf | sort -nrk 3 | less
 
-# Create a BCF file with the problematic loci
-bcftools view -i 'INFO/MERR >= 4' 12_impute_impute/all_inds_panel_only_annot_MERR.vcf -Ob -o 12_impute_impute/all_inds_panel_only_annot_MERR_problem_loci.bcf
+# Create a BCF file with problem loci
+bcftools view -i 'INFO/MERR >= 4' 06_screen_loci/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_rename_MERR.bcf -Ob -o 06_screen_loci/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_rename_MERR_4.bcf
 
 # Index
-bcftools index 12_impute_impute/all_inds_panel_only_annot_MERR_problem_loci.bcf
+bcftools index 06_screen_loci/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_rename_MERR_4.bcf
 ```
 
-Remove the Mendelian inconsistencies from the wgrs+panel all individual file
+Follow the main README workflow until just before imputation, then use the bad bad loci BCF file to drop bad loci from the BCF
 ```
 # Prepare an output folder for bcftools isec
-mkdir 12_impute_impute/isec_remove_MERR/
+mkdir 04_impute/isec_remove_MERR
 
 # run isec to identify loci private to the all loci data (dropping MERR)
-bcftools isec ./12_impute_impute/all_inds_wgrs_and_panel_no_multiallelic.bcf 11_impute_combine/offspring_panel_roslin_rehead_hotspot_only_common_w_parents.vcf.gz -p 12_impute_impute/isec_keep_only_panel_loci/
+bcftools isec 04_impute/all_inds_wgrs_and_panel_biallele.bcf 06_screen_loci/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_rename_MERR_4.bcf -p 04_impute/isec_remove_MERR/
 
 ## Interpretation:
-# 0000.vcf = private to all_inds_wgrs_and_panel_no_multiallelic.bcf
-# 0001.vcf = private to problem loci
-# 0002.vcf = records from all_inds shared in both
-# 0003.vcf = records from problem loci shared in both
+# 0000.vcf = private to main file (no 'bad' loci)
+# 0001.vcf = private to MERR file
+# 0002.vcf = records from main file shared in both
+# 0003.vcf = records from MERR file shared in both
 
-# Save the private records from all_inds
-cp -l 12_impute_impute/isec_remove_MERR/0000.vcf 12_impute_impute/all_inds_wgrs_and_panel_no_multiallelic_no_MERR.vcf
+# Save the private to main file vcf
+bcftools view 04_impute/isec_remove_MERR/0000.vcf -Ob -o 04_impute/all_inds_wgrs_and_panel_biallele_no_MERR.bcf
 
-# Convert to BCF
-bcftools view 12_impute_impute/all_inds_wgrs_and_panel_no_multiallelic_no_MERR.vcf -Ob -o 12_impute_impute/all_inds_wgrs_and_panel_no_multiallelic_no_MERR.bcf
-
-# note: as clean-up, you may want to delete the isec folders, as they are large
+# Clean up by deleting the isec folder
 ```
 
+Then return to the main workflow, starting at the Imputation section.    
