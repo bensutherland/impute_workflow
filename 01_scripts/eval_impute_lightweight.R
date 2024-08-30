@@ -1,4 +1,4 @@
-# Read in AlphaImpute outputs (imputed or 10X, all chromosomes), and compare to evaluate imputation
+# Read in imputation outputs in ai2 format and compare with empirical data (ai2 format) of same individuals to evaluate imputation
 # B. Sutherland (2024-07-25)
 
 ### Front Matter ####
@@ -23,51 +23,56 @@ rm(current.path)
 # sessionInfo()
 
 # Set variables
-offspring_imputed_ai2.FN     <- "05_compare/all_chr_combined.txt" # imputed
+offspring_imputed_ai2.FN     <- "05_compare/all_chr_combined.txt" # imputed ai2 FN
+offspring_imputed_fi3.FN <- "04_impute/fimpute/fi3_loci_by_inds_all_imputed_chr.txt" # impute fi3 FN
 offspring_10X_ai2.FN         <- "05_compare/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_offspring_only_rename_ai2.txt" # 10X genotypes
 subsampled <- FALSE # TRUE or FALSE whether this is subsampled data from all high density
 output_folder <- "05_compare"
 
-offspring_imputed_fi3.FN <- "04_impute/fimpute/fi3_loci_by_inds_all_imputed_chr.txt"
-
 # Select the imputation software target to use
-#impute_software <- "fi3" # fi3 or ai2
-impute_software <- "ai2"
+impute_software <- "fi3" # fi3 or ai2
 
 
 #### 01. Load data ####
-# Read in imputed data (ai2)
-imputed.df <- fread(file = offspring_imputed_ai2.FN, sep = "\t")
-dim(imputed.df)
-imputed.df <- as.data.frame(imputed.df) # convert to df
-imputed.df[1:5,1:5]
-#colnames(imputed.df)
-
-# Read in imputed data (fi3)
-imputed_fi3.df <- fread(file = offspring_imputed_fi3.FN, sep = "\t")
-dim(imputed_fi3.df)
-imputed_fi3.df <- as.data.frame(imputed_fi3.df)
-imputed_fi3.df[1:5,1:5]
-colnames(imputed_fi3.df)[grep(pattern = "V1", x = colnames(imputed_fi3.df))] <- "mname"
-imputed_fi3.df[1:5,1:5]
-imputed_fi3.df$mname <- gsub(pattern = "__", replacement = " ", x = imputed_fi3.df$mname)
-imputed_fi3.df[1:5,1:5]
+# Read in imputed data
+if(impute_software=="ai2"){
+  
+  # Reporting
+  print(paste0("Reading in data imputed by ", impute_software))
+  
+  imputed.df <- fread(file = offspring_imputed_ai2.FN, sep = "\t")
+  dim(imputed.df)
+  imputed.df <- as.data.frame(imputed.df) # convert to df
+  imputed.df[1:5,1:5]
+  
+  # Reporting
+  print(paste0("Number loci: ", nrow(imputed.df)))
+  
+}else if(impute_software=="fi3"){
+  
+  # Reporting
+  print(paste0("Reading in data imputed by ", impute_software))
+  
+  imputed.df <- fread(file = offspring_imputed_fi3.FN, sep = "\t")
+  dim(imputed.df)
+  imputed.df <- as.data.frame(imputed.df)
+  colnames(imputed.df)[grep(pattern = "V1", x = colnames(imputed.df))] <- "mname"
+  imputed.df$mname <- gsub(pattern = "__", replacement = " ", x = imputed.df$mname) # convert to mname as per ai2
+  imputed.df[1:5,1:5]
+  
+  # Reporting
+  print(paste0("Number loci: ", nrow(imputed.df)))
+  
+}
 
 # Read in empirical data (10X)
+print(paste0("Reading in empirical data"))
 empirical.df <- fread(file = offspring_10X_ai2.FN, sep = "\t")
 dim(empirical.df)
 empirical.df <- as.data.frame(empirical.df) # convert to df
 empirical.df[1:5,1:5]
 
-
-# Select impute software
-if(impute_software=="fi3"){
-  
-  imputed.df <- imputed_fi3.df
-  
-}
-
-imputed.df[1:5,1:5]
+print(paste0("Number loci: ", nrow(empirical.df)))
 
 
 #### 02. Prepare data for matching ####
@@ -108,10 +113,6 @@ if(subsampled == TRUE){
 # /NOTE: also removes requirement for checking for duplicate samples, these are dropped earlier #
 head(colnames(empirical.df))
 head(colnames(imputed.df))
-
-# One remaining adjustment, but eventually will be removed
-# ### TODO ####
-# colnames(empirical.df) <- gsub(pattern = "-", replacement = "_", x = colnames(empirical.df))
 
 
 #### 03. Matching ####
@@ -162,6 +163,10 @@ all_data.df <- all_data.df %>%
   select("mname", everything())
 all_data.df[1:5,1:5]
 
+# Create output foldername
+output_folder <- paste0(output_folder, "/concord_eval_", impute_software)
+print(paste0("Making output directory: ", output_folder))
+dir.create(path = output_folder, showWarnings = F)
 
 #### 07. Per chromosome, evaluate concordance ####
 # Identify chr
@@ -253,13 +258,7 @@ for(c in 1:length(chr)){
               
 }
 
-
-
-
 # Write out all info
-# CHANGE TO FWRITE
-write.table(x = all_data.df, file = paste0(output_folder, "/all_loci_data_comparison.txt"), sep = "\t", row.names = F)
+fwrite(x = all_data.df, file = paste0(output_folder, "/all_loci_data_comparison.txt"), sep = "\t", row.names = F)
 
-
-# Note: store results as needed before re-running or else will lose data
 # end #
