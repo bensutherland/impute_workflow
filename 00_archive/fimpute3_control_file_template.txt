@@ -1,0 +1,10 @@
+title="fimpute3_run";
+genotype_file="genotype_file.txt";
+snp_info_file="map.txt";
+output_folder="output";
+ped_file="pedigree.csv";
+parentage_test /find_match_cnflt; 
+njob = 2;
+ped_depth = 3;
+save_genotype;
+
