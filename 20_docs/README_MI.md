@@ -1,7 +1,7 @@
 ### Inspect and remove Mendelian incompatibility loci ###
 Mendelian incompatibilities in panel data may indicate several issues, one of which is null alleles occurring in the panel. In an imputation framework, null alleles may negatively impact the outcome of the imputation. Instructions to identify then remove loci with high frequencies of MI are given below.     
 
-### 01. Prepare input data ###
+### 01. Detect Mendelian incompatibilities in the panel data ###
 This section expects that the panel data for parents and offspring is present in a BCF file, and that renaming may be necessary.   
 The input file here will be assumed as: `02_input_data/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2.bcf`    
 ```
@@ -27,7 +27,7 @@ bcftools +mendelian 02_input_data/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_
 bcftools query -f '%CHROM %POS %MERR\n' 06_screen_loci/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_rename_MERR.bcf | sort -nrk 3 | less
 
 # Save a text file of the distribution    
-bcftools query -f '%CHROM %POS %MERR\n' 06_screen_loci/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_rename_MERR.bcf | sort -nrk 3 > 06_screen_loci/MI_freq.txt    
+bcftools query -f '%CHROM %POS %MERR\n' 06_screen_loci/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_rename_MERR.bcf > 06_screen_loci/LD_MI_freq.txt    
 # ...use Rscript to plot a histogram: 01_scripts/plot_MI.R   
 
 # Create a BCF file with problem loci
@@ -37,6 +37,7 @@ bcftools view -i 'INFO/MERR >= 4' 06_screen_loci/mpileup_calls_noindel5_miss0.2_
 bcftools index 06_screen_loci/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_rename_MERR_4.bcf
 ```
 
+### 02. Remove problematic loci from the analysis ###
 Follow the main README workflow until just before imputation, then use the bad bad loci BCF file to drop bad loci from the BCF
 ```
 # Prepare an output folder for bcftools isec
@@ -55,6 +56,29 @@ bcftools isec 04_impute/all_inds_wgrs_and_panel_biallele.bcf 06_screen_loci/mpil
 bcftools view 04_impute/isec_remove_MERR/0000.vcf -Ob -o 04_impute/all_inds_wgrs_and_panel_biallele_no_MERR.bcf
 
 # Clean up by deleting the isec folder
+```
+
+### 03. Optional: Detect Mendelian incompatibility loci in the wgrs data ###
+Assumes that you have already separated and renamed the hd data, and it exists in `02_input_data/*_hd/`.    
+
+```
+# Merge the prepared HD data
+bcftools merge 02_input_data/parent_hd/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_parents_only_rename.bcf 02_input_data/offspring_hd/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_offspring_only_rename.bcf -Ob -o 06_screen_loci/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_renamed_remerged.bcf
+
+# See above for preparing the trios file
+
+# Limit the trios file to only those samples that are present
+bcftools query -l 06_screen_loci/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_renamed_remerged.bcf > 06_screen_loci/present_HD_samples.txt
+# ...then use Rscript 01_scripts/limit_trios_file.R
+
+# Use bcftools plugin Mendelian to annotate the number of Mendelian errors (MERR) in the BCF file and output
+bcftools +mendelian 06_screen_loci/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_renamed_remerged.bcf -T 06_screen_loci/trios_limited.txt --mode a -Ob -o 06_screen_loci/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_renamed_remerged_MERR.bcf
+
+# Observe the distribution of MERR
+bcftools query -f '%CHROM %POS %MERR\n' 06_screen_loci/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_renamed_remerged_MERR.bcf > 06_screen_loci/HD_MI_freq.txt
+
+# Use code 01_scripts/plot_MI.R to characterize
+
 ```
 
 Then return to the main workflow, starting at the Imputation section.    

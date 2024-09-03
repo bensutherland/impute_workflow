@@ -20,14 +20,33 @@ setwd(current.path)
 rm(current.path)
 
 # Set variables
-MI_freq.FN     <- "06_screen_loci/MI_freq.txt" 
+datatype <- "HD"
+#datatype <- "LD"
+
+input_MI_freq.FN <- paste0("06_screen_loci/", datatype, "_MI_freq.txt")
+
+# Set the number of trios in total present
+## TODO: naming variable
+#MI_trios.FN <- "06_screen_loci/trios_limited.txt"
+MI_trios.FN <- "06_screen_loci/trios.txt"
 
 # Read in data
-MI_freq.df <- read.table(file = MI_freq.FN, header = F, sep = " ")
+MI_freq.df <- read.table(file = input_MI_freq.FN, header = F, sep = " ")
 colnames(MI_freq.df) <- c("chr", "pos", "num_trios_MI")
 head(MI_freq.df)
+num_loci <- nrow(MI_freq.df)
 
-pdf(file = "06_screen_loci/histogram_of_MI.pdf", width = 5, height = 4)
+MI_trios.df <- read.table(file = MI_trios.FN, header = F, sep = ",")
+num_trios <- nrow(MI_trios.df)
+
+# Number of loci that have MI in at least half the trios
+table(MI_freq.df$num_trios_MI >= (num_trios/2)) #31 of 5800937
+table(MI_freq.df$num_trios_MI >= (num_trios/10)) #348329 of 5800937
+
+
+output_histogram.FN <- paste0("06_screen_loci/histogram_of_MI_", datatype, ".pdf")
+
+pdf(file = output_histogram.FN, width = 5, height = 4)
 hist(MI_freq.df$num_trios_MI, las = 1, main = "", xlab = "Number trios displaying Mendelian incompatibility"
      , breaks = 15
      )
