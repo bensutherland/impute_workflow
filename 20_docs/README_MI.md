@@ -26,6 +26,10 @@ bcftools +mendelian 02_input_data/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_
 # Observe the distribution of MERR
 bcftools query -f '%CHROM %POS %MERR\n' 06_screen_loci/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_rename_MERR.bcf | sort -nrk 3 | less
 
+# Save a text file of the distribution    
+bcftools query -f '%CHROM %POS %MERR\n' 06_screen_loci/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_rename_MERR.bcf | sort -nrk 3 > 06_screen_loci/MI_freq.txt    
+# ...use Rscript to plot a histogram: 01_scripts/plot_MI.R   
+
 # Create a BCF file with problem loci
 bcftools view -i 'INFO/MERR >= 4' 06_screen_loci/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_rename_MERR.bcf -Ob -o 06_screen_loci/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_rename_MERR_4.bcf
 
