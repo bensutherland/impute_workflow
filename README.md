@@ -126,11 +126,6 @@ cp -l 03_combine/isec_wgrs_and_panel/0003.vcf 05_compare/parent_panel_shared_in_
 
 ```
 
-### 0X. Inspect concordance of shared loci in parents and offspring ###
-- #TODO 
-- #TODO: do the above again with offspring wgrs and panel, then save out as above into `05_compare`  
-- #TODO: move this down
-  
 
 ### 03. Concatenate parent panel loci into parent wgrs only data ###
 Prepare the parent wgrs-only file to be combined:       
@@ -270,3 +265,85 @@ cp -l 02_input_data/offspring_hd/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_
 # produces plots of average concordance between methods per individual by chromosome, and other outputs to screen
 ```
 
+
+### 08. Inspect concordance of shared loci in parents and offspring ###
+Evaluate the concordance of the shared loci in the panel and wgrs data for both the parents and offspring. First, prepare the data:     
+```
+# Make a subfolder to keep things tidy
+mkdir 05_compare/panel_vs_wgrs
+
+# Copy in all datasets (note: filenames must be different)   
+cp -l 02_input_data/parent_hd/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_parents_only_rename.bcf* 05_compare/panel_vs_wgrs/
+
+cp -l 02_input_data/parent_ld/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_parents_only_rename.bcf* ./05_compare/panel_vs_wgrs/
+
+cp -l 02_input_data/offspring_hd/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_offspring_only_rename.bcf* 05_compare/panel_vs_wgrs/
+
+cp -l 02_input_data/offspring_ld/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_offspring_only_rename.bcf* 05_compare/panel_vs_wgrs/
+
+# Merge the wgrs data back together
+bcftools merge 05_compare/panel_vs_wgrs/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_parents_only_rename.bcf 05_compare/panel_vs_wgrs/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_offspring_only_rename.bcf -Ob -o 05_compare/panel_vs_wgrs/parents_and_offspring_wgrs_renamed.bcf  
+
+bcftools index 05_compare/panel_vs_wgrs/parents_and_offspring_wgrs_renamed.bcf
+
+# Merge the panel data back together
+bcftools merge 05_compare/panel_vs_wgrs/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_parents_only_rename.bcf 05_compare/panel_vs_wgrs/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_offspring_only_rename.bcf -Ob -o 05_compare/panel_vs_wgrs/parents_and_offspring_panel_renamed.bcf
+
+bcftools index 05_compare/panel_vs_wgrs/parents_and_offspring_panel_renamed.bcf
+
+```
+
+Prepare files that only contain common loci between the platforms:     
+```
+mkdir 05_compare/panel_vs_wgrs/isec/
+
+# run isec to identify overlapping or private loci. Include flag '--collapse all' to consider overlap regardless of alleles.    
+bcftools isec --collapse all 05_compare/panel_vs_wgrs/parents_and_offspring_wgrs_renamed.bcf 05_compare/panel_vs_wgrs/parents_and_offspring_panel_renamed.bcf -p 05_compare/panel_vs_wgrs/isec/
+
+## Interpretation:    
+# 0000.vcf = wgrs, private
+# 0001.vcf = panel, private
+# 0002.vcf = wgrs, shared
+# 0003.vcf = panel, shared
+
+# Save the shared output, this will be used for comparisons
+bcftools view 05_compare/panel_vs_wgrs/isec/0002.vcf -Ob -o 05_compare/panel_vs_wgrs/all_inds_wgrs_shared.bcf  
+
+bcftools index 05_compare/panel_vs_wgrs/all_inds_wgrs_shared.bcf
+
+bcftools view 05_compare/panel_vs_wgrs/isec/0003.vcf -Ob -o 05_compare/panel_vs_wgrs/all_inds_panel_shared.bcf
+
+bcftools index 05_compare/panel_vs_wgrs/all_inds_panel_shared.bcf
+
+# Clean the space
+rm -rf 05_compare/panel_vs_wgrs/isec
+```
+
+Make the actual comparisons
+```
+# Specify the samples that you want to run (must be present in both files)
+bcftools query -l 05_compare/panel_vs_wgrs/all_inds_wgrs_shared.bcf > 05_compare/panel_vs_wgrs/inds_to_compare.txt
+# ...note: do this on the wgrs data (the datatype with the fewer samples)
+
+bcftools stats -S 05_compare/panel_vs_wgrs/inds_to_compare.txt  05_compare/panel_vs_wgrs/all_inds_wgrs_shared.bcf 05_compare/panel_vs_wgrs/all_inds_panel_shared.bcf > 05_compare/panel_vs_wgrs/all_inds_wgrs_panel_comp.txt
+
+grep -E 'GCTs' 05_compare/panel_vs_wgrs/all_inds_wgrs_panel_comp.txt  | grep -v 'GCTs,' > 05_compare/panel_vs_wgrs/all_inds_wgrs_panel_comp_GCTs.txt
+
+grep -E 'GCsS' 05_compare/panel_vs_wgrs/all_inds_wgrs_panel_comp.txt  | grep -v 'GCsS,' - > 05_compare/panel_vs_wgrs/all_inds_wgrs_panel_comp_GCsS.txt
+```
+
+Use the following script to analyze the outputs and generate figures:    
+`01_scripts/assess_bcftools_stats.R`    
+
+
+
+
+
+
+
+
+
+
+
+
+ 

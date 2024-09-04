@@ -2,6 +2,7 @@
 *.csi
 *.txt
 *.vcf
+*.vcf.gz
 *.csv
 *.haplotypes
 *.genotypes
@@ -9,3 +10,4 @@
 *#
 *.swp
 .Rhistory
+
