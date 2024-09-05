@@ -283,6 +283,51 @@ bcftools view --regions-file 05_compare/ai2_imputed_regions.txt 04_impute/all_in
 ```
 
 Compare the imputed to the empirical:      
+```
+# Make a subfolder to keep things tidy
+mkdir 05_compare/ai2_vs_empirical
+
+# Use a prepared file that has all wgrs genotypes (renamed)
+# 05_compare/panel_vs_wgrs/parents_and_offspring_wgrs_renamed.bcf
+
+# Prepare an isec folder
+mkdir 05_compare/ai2_vs_empirical/isec/
+
+# Run isec
+bcftools isec --collapse all 05_compare/all_inds_wgrs_and_panel_biallele_imputed.bcf 05_compare/panel_vs_wgrs/parents_and_offspring_wgrs_renamed.bcf -p 05_compare/ai2_vs_empirical/isec/
+
+## Interpretation
+# 0000.vcf = private to imputed
+# 0001.vcf = private to wgrs
+# 0002.vcf = imputed, shared
+# 0003.vcf = wgrs, shared
+
+# Save the shared output, this will be used for comparisons
+bcftools view 05_compare/ai2_vs_empirical/isec/0002.vcf -Ob -o 05_compare/ai2_vs_empirical/all_inds_imputed_shared.bcf
+
+bcftools index 05_compare/ai2_vs_empirical/all_inds_imputed_shared.bcf 
+
+bcftools view 05_compare/ai2_vs_empirical/isec/0003.vcf -Ob -o 05_compare/ai2_vs_empirical/all_inds_wgrs_shared.bcf
+
+bcftools index 05_compare/ai2_vs_empirical/all_inds_wgrs_shared.bcf
+
+```
+
+Conduct the actual comparison
+
+```
+# Specify the samples that you want to compare
+bcftools query -l 05_compare/ai2_vs_empirical/all_inds_wgrs_shared.bcf > 05_compare/ai2_vs_empirical/inds_to_compare.txt
+
+bcftools stats -S 05_compare/ai2_vs_empirical/inds_to_compare.txt 05_compare/ai2_vs_empirical/all_inds_wgrs_shared.bcf 05_compare/ai2_vs_empirical/all_inds_imputed_shared.bcf > 05_compare/ai2_vs_empirical/all_inds_wgrs_imputed_comp.txt
+
+# Make subset files with specific sections
+
+grep -E 'GCTs' 05_compare/ai2_vs_empirical/all_inds_wgrs_imputed_comp.txt | grep -v 'GCTs,' > 05_compare/ai2_vs_empirical/all_inds_wgrs_imputed_comp_GCTs.txt
+
+grep -E 'GCsS' 05_compare/ai2_vs_empirical/all_inds_wgrs_imputed_comp.txt | grep -v 'GCsS,' > 05_compare/ai2_vs_empirical/all_inds_wgrs_imputed_comp_GCsS.txt
+
+```
 
 
 

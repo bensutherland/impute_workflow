@@ -16,8 +16,8 @@ setwd(current.path)
 rm(current.path)
 
 # Set user variables
-input_GCTs.FN <- "05_compare/panel_vs_wgrs/all_inds_wgrs_panel_comp_GCTs.txt"
-input_GCsS.FN <- "05_compare/panel_vs_wgrs/all_inds_wgrs_panel_comp_GCsS.txt"
+input_GCTs.FN <- "05_compare/ai2_vs_empirical/all_inds_wgrs_imputed_comp_GCTs.txt"
+input_GCsS.FN <- "05_compare/ai2_vs_empirical/all_inds_wgrs_imputed_comp_GCsS.txt"
 
 #### 01. R-squared value per sample ####
 # Load data
@@ -32,7 +32,7 @@ concord_by_sample.df[1:5,1:5]
 concord_by_sample.df$dosage.r.squared <- as.numeric(x = concord_by_sample.df$dosage.r.squared)
 
 # Plot histogram
-pdf(file = "05_compare/panel_vs_wgrs/hist_geno_concord_by_sample_r2.pdf", width = 7.6, height = 4)
+pdf(file = "05_compare/ai2_vs_empirical/hist_geno_concord_by_sample_r2.pdf", width = 7.6, height = 4)
 hist(x = concord_by_sample.df$dosage.r.squared, las = 1, main = ""
      , xlab = "Genotype concordance by sample, dosage r2"
      , breaks = 20
@@ -98,7 +98,7 @@ table(rowSums(concord_table_summary.df[,c("concord_count", "missing_count", "dis
 # Calculate percentage of complete records that are concordant (exclude missing)
 concord_table_summary.df$prop_corr <- concord_table_summary.df$concord_count / (concord_table_summary.df$concord_count+ concord_table_summary.df$discord_count)
 
-pdf(file = "05_compare/panel_vs_wgrs/hist_geno_concord_by_sample_prop_corr.pdf", width = 7.6, height = 4)
+pdf(file = "05_compare/ai2_vs_empirical/hist_geno_concord_by_sample_prop_corr.pdf", width = 7.6, height = 4)
 hist(x = concord_table_summary.df$prop_corr, las = 1, main = ""
      , xlab = "Proportion concordant"
      , breaks = 20
@@ -110,9 +110,15 @@ summary(concord_table_summary.df$prop_corr)
 sd(concord_table_summary.df$prop_corr, na.rm = T)
 
 
-pdf(file = "05_compare/panel_vs_wgrs/ppn_concord_by_missing_data.pdf", width = 7.6, height = 4)
+pdf(file = "05_compare/ai2_vs_empirical/ppn_concord_by_missing_data.pdf", width = 7.6, height = 4)
 plot(x = concord_table_summary.df$missing_count, y = concord_table_summary.df$prop_corr
      , xlab = "Per sample missing data", ylab = "Proportion concordant"
      , las = 1
      )
 dev.off()
+
+# Parents
+summary(concord_table_summary.df[grep(pattern = "ASY2", x = concord_table_summary.df$indiv, invert = T), "prop_corr"])
+
+# Offspring
+summary(concord_table_summary.df[grep(pattern = "ASY2", x = concord_table_summary.df$indiv), "prop_corr"])
