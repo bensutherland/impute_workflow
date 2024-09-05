@@ -266,6 +266,26 @@ cp -l 02_input_data/offspring_hd/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_
 ```
 
 
+##### New approach: #####    
+```
+# Identify which regions were output by ai2
+awk '{ print $1 "\t" $2  }' 05_compare/all_chr_combined.txt | grep -vE '^mname' - > 05_compare/ai2_imputed_regions.txt
+
+# Prepare a VCF file from the pre-imputation BCF file, with only the selected regions
+bcftools view --regions-file 05_compare/ai2_imputed_regions.txt 04_impute/all_inds_wgrs_and_panel_biallele.bcf -Ov -o 04_impute/all_inds_wgrs_and_panel_biallele_only_ai2_imputed_regions.vcf
+
+# Format the ai2 output file to prepare it to be used to create a VCF file
+./01_scripts/ai2_to_vcf_format_step_1.sh
+
+# Use the following Rscript to read in the VCF and fill in the data from the imputed file
+01_scripts/ai2_to_VCF.R
+
+```
+
+Compare the imputed to the empirical:      
+
+
+
 ### 08. Inspect concordance of shared loci in parents and offspring ###
 Evaluate the concordance of the shared loci in the panel and wgrs data for both the parents and offspring. First, prepare the data:     
 ```
