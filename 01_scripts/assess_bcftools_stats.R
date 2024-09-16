@@ -8,6 +8,7 @@
 ## Install and load packages
 #install.packages("rstudioapi")
 library(rstudioapi)
+library(tidyr)
 
 # Set working directory
 current.path <- dirname(rstudioapi::getSourceEditorContext()$path)
@@ -16,8 +17,10 @@ setwd(current.path)
 rm(current.path)
 
 # Set user variables
-input_GCTs.FN <- "05_compare/ai2_vs_empirical/all_inds_wgrs_imputed_comp_GCTs.txt"
-input_GCsS.FN <- "05_compare/ai2_vs_empirical/all_inds_wgrs_imputed_comp_GCsS.txt"
+input_GCTs.FN <- "05_compare/panel_vs_wgrs/all_inds_wgrs_panel_comp_GCTs.txt"
+input_GCsS.FN <- "05_compare/panel_vs_wgrs/all_inds_wgrs_panel_comp_GCsS.txt"
+input_PSD.FN  <- "05_compare/panel_vs_wgrs/all_inds_wgrs_panel_comp_psd.txt"
+r_type <- "not_squared"
 
 #### 01. R-squared value per sample ####
 # Load data
@@ -30,6 +33,14 @@ concord_by_sample.df[1:5,1:5]
 
 # Convert dosage rsquared to numeric
 concord_by_sample.df$dosage.r.squared <- as.numeric(x = concord_by_sample.df$dosage.r.squared)
+
+# An option...
+# if(r_type=="not_squared"){
+#   
+#   concord_by_sample.df$dosage.r.squared <- sqrt(concord_by_sample.df$dosage.r.squared)
+#   
+# }
+  
 
 # Plot histogram
 pdf(file = "05_compare/ai2_vs_empirical/hist_geno_concord_by_sample_r2.pdf", width = 7.6, height = 4)
@@ -122,3 +133,49 @@ summary(concord_table_summary.df[grep(pattern = "ASY2", x = concord_table_summar
 
 # Offspring
 summary(concord_table_summary.df[grep(pattern = "ASY2", x = concord_table_summary.df$indiv), "prop_corr"])
+
+#### 03. Per-site discordance ####
+# Load data
+psd_table.df  <- read.delim2(file = input_PSD.FN, header = T, sep = "\t")
+psd_table.df[1:5,]
+
+# Clean up column names
+colnames(psd_table.df) <- gsub(pattern = "^X\\.[0-9]\\.|^X\\.[0-9][0-9]\\.|^X\\.\\.", replacement = "", x = colnames(psd_table.df))
+colnames(psd_table.df) <- gsub(pattern = "\\.\\.\\.\\.", replacement = "-", x = colnames(psd_table.df))
+psd_table.df[1:5,]
+
+# Create unique locus identifier
+psd_table.df$locus_id <- paste0(psd_table.df$CHROM, "_", psd_table.df$POS)
+psd_table.df$percent.corr <- psd_table.df$Number.of.matches / (psd_table.df$Number.of.matches + psd_table.df$Number.of.mismatches)
+psd_table.df$num_typed <- psd_table.df$Number.of.matches + psd_table.df$Number.of.mismatches
+
+pdf(file = "05_compare/panel_vs_wgrs/per_locus_percent_corr.pdf", width = 7.6, height = 4)
+hist(psd_table.df$percent.corr, main = "", xlab = "Percent correct (%)", las = 1)
+dev.off()
+
+pdf(file = "05_compare/panel_vs_wgrs/per_locus_percent_corr_by_num_typed.pdf", width = 7.6, height = 4)
+plot(y = psd_table.df$percent.corr, x = psd_table.df$num_typed, las = 1
+     , ylab = "Percent correct (%)", xlab = "Number loci typed"
+     )
+dev.off()
+
+# How many loci have lower than cutoff percent correct? 
+bad_loci <- psd_table.df[psd_table.df$percent.corr < 0.5, "locus_id"]
+length(bad_loci)
+write.table(x = bad_loci, file = "05_compare/panel_vs_wgrs/bad_loci.txt", col.names = F, row.names = F)
+nrow(psd_table.df)
+
+# Summary
+summary(psd_table.df$percent.corr)
+sd(psd_table.df$percent.corr, na.rm = T)
+
+psd_table_clean.df <- psd_table.df[psd_table.df$percent.corr >= 0.5, ]
+nrow(psd_table_clean.df)
+summary(psd_table_clean.df$percent.corr)
+sd(psd_table_clean.df$percent.corr, na.rm = T)
+
+
+#### 04. Combining analyses ####
+# What is the percent concordant after removing the 'bad loci'? 
+# Would need to redo bcftools stats after deleting the bad loci
+

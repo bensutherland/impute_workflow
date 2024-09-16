@@ -401,7 +401,14 @@ Use the following script to analyze the outputs and generate figures:
 `01_scripts/assess_bcftools_stats.R`    
 
 
+Explore per-site data:     
+```
+# Calculate per-site discordance
+bcftools stats --verbose -S 05_compare/panel_vs_wgrs/inds_to_compare.txt  05_compare/panel_vs_wgrs/all_inds_wgrs_shared.bcf 05_compare/panel_vs_wgrs/all_inds_panel_shared.bcf > 05_compare/panel_vs_wgrs/all_inds_wgrs_panel_comp_w_sites.txt
 
+# Capture the output
+grep -E 'PSD' 05_compare/panel_vs_wgrs/all_inds_wgrs_panel_comp_w_sites.txt > 05_compare/panel_vs_wgrs/all_inds_wgrs_panel_comp_psd.txt
+```
 
 
 
