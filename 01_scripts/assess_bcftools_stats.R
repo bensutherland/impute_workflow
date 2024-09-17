@@ -1,5 +1,7 @@
 # Read output of bcftools stats to summarize
 # B. Sutherland (2024-09-04)
+# Note: requires that "GCTs.txt", *_GCsS.txt and *_psd.txt is present in set 'input_folder'
+# Note: requires that steps have been taken in the README before this script
 
 ### Front Matter ####
 # Clean space
@@ -17,10 +19,16 @@ setwd(current.path)
 rm(current.path)
 
 # Set user variables
-input_GCTs.FN <- "05_compare/panel_vs_wgrs/all_inds_wgrs_panel_comp_GCTs.txt"
-input_GCsS.FN <- "05_compare/panel_vs_wgrs/all_inds_wgrs_panel_comp_GCsS.txt"
-input_PSD.FN  <- "05_compare/panel_vs_wgrs/all_inds_wgrs_panel_comp_psd.txt"
-r_type <- "not_squared"
+#input_folder <- "05_compare/panel_vs_wgrs/" 
+input_folder <- "05_compare/ai2_vs_empirical/"
+
+# Build full filenames
+input_GCTs.FN <- paste0(input_folder, "GCTs.txt")
+input_GCsS.FN <- paste0(input_folder, "GCsS.txt")
+input_PSD.FN  <- paste0(input_folder, "PSD.txt")
+
+# Not yet implemented
+#r_type <- "not_squared"
 
 #### 01. R-squared value per sample ####
 # Load data

@@ -47,7 +47,7 @@ grep -E 'GCsS' $INPUT_FOLDER/$COMPARISON_FOLDER/stats_output.txt |
 if [ "$PER_SITE" = true ] ; then
   echo "Obtaining per-site information"
   grep -E 'PSD' $INPUT_FOLDER/$COMPARISON_FOLDER/stats_output.txt >\
-  $INPUT_FOLDER/$COMPARISON_FOLDER/site_discordance.txt
+  $INPUT_FOLDER/$COMPARISON_FOLDER/PSD.txt
 fi
   
 # Report finish and next step
