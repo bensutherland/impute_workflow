@@ -252,6 +252,7 @@ Imputation with FImpute3:
 
 
 ### 07. Evaluate imputation ###
+#### Original custom approach (both ai2 format) ####
 Evaluate results by comparing the imputed data with the 10X 'empirical' data:     
 ```
 # Obtain 10X bcf file 
@@ -266,19 +267,21 @@ cp -l 02_input_data/offspring_hd/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_
 ```
 
 
-##### New approach: #####    
+#### New approach VCF vs. VCF ####
 ```
-# Identify which regions were output by ai2
+# Need to create a VCF file with only the loci present in the imputed output
+# First, identify which regions were output by ai2
 awk '{ print $1 "\t" $2  }' 05_compare/all_chr_combined.txt | grep -vE '^mname' - > 05_compare/ai2_imputed_regions.txt
 
-# Prepare a VCF file from the pre-imputation BCF file, with only the selected regions
+# Second, subset the pre-imputed VCF file to only include these selected regions
 bcftools view --regions-file 05_compare/ai2_imputed_regions.txt 04_impute/all_inds_wgrs_and_panel_biallele.bcf -Ov -o 04_impute/all_inds_wgrs_and_panel_biallele_only_ai2_imputed_regions.vcf
 
-# Format the ai2 output file to prepare it to be used to create a VCF file
+# Convert allele dosage (0,1,2) format to standard VCF format (0/0, 0/1, 1/1)
 ./01_scripts/ai2_to_vcf_format_step_1.sh
+# ...output will be the input identifier, with "_converted.txt" as suffix
 
-# Use the following Rscript to read in the VCF and fill in the data from the imputed file
-01_scripts/ai2_to_VCF.R
+# Use the following Rscript to read in the VCF and replace the genotypes in the pre-imputed with the imputed data
+./01_scripts/ai2_to_VCF.R
 
 ```
 
@@ -287,7 +290,7 @@ Compare the imputed to the empirical:
 # Make a subfolder to keep things tidy
 mkdir 05_compare/ai2_vs_empirical
 
-# Use a prepared file that has all wgrs genotypes (renamed)
+# Use a prepared file that has all wgrs genotypes (samples renamed)
 # 05_compare/panel_vs_wgrs/parents_and_offspring_wgrs_renamed.bcf
 
 # Prepare an isec folder
@@ -318,6 +321,7 @@ Conduct the actual comparison
 ```
 # Specify the samples that you want to compare
 bcftools query -l 05_compare/ai2_vs_empirical/all_inds_wgrs_shared.bcf > 05_compare/ai2_vs_empirical/inds_to_compare.txt
+# ...ensure to use the file with the fewest individuals
 
 bcftools stats -S 05_compare/ai2_vs_empirical/inds_to_compare.txt 05_compare/ai2_vs_empirical/all_inds_wgrs_shared.bcf 05_compare/ai2_vs_empirical/all_inds_imputed_shared.bcf > 05_compare/ai2_vs_empirical/all_inds_wgrs_imputed_comp.txt
 
@@ -386,36 +390,12 @@ rm -rf 05_compare/panel_vs_wgrs/isec
 
 Make the actual comparisons
 ```
-# Specify the samples that you want to run (must be present in both files)
-bcftools query -l 05_compare/panel_vs_wgrs/all_inds_wgrs_shared.bcf > 05_compare/panel_vs_wgrs/inds_to_compare.txt
-# ...note: do this on the wgrs data (the datatype with the fewer samples)
+./01_scripts/run_bcftools_stats.sh
+# ...set user variables, including target folders and whether per-site should be calculated   
 
-bcftools stats -S 05_compare/panel_vs_wgrs/inds_to_compare.txt  05_compare/panel_vs_wgrs/all_inds_wgrs_shared.bcf 05_compare/panel_vs_wgrs/all_inds_panel_shared.bcf > 05_compare/panel_vs_wgrs/all_inds_wgrs_panel_comp.txt
-
-grep -E 'GCTs' 05_compare/panel_vs_wgrs/all_inds_wgrs_panel_comp.txt  | grep -v 'GCTs,' > 05_compare/panel_vs_wgrs/all_inds_wgrs_panel_comp_GCTs.txt
-
-grep -E 'GCsS' 05_compare/panel_vs_wgrs/all_inds_wgrs_panel_comp.txt  | grep -v 'GCsS,' - > 05_compare/panel_vs_wgrs/all_inds_wgrs_panel_comp_GCsS.txt
 ```
 
 Use the following script to analyze the outputs and generate figures:    
 `01_scripts/assess_bcftools_stats.R`    
-
-
-Explore per-site data:     
-```
-# Calculate per-site discordance
-bcftools stats --verbose -S 05_compare/panel_vs_wgrs/inds_to_compare.txt  05_compare/panel_vs_wgrs/all_inds_wgrs_shared.bcf 05_compare/panel_vs_wgrs/all_inds_panel_shared.bcf > 05_compare/panel_vs_wgrs/all_inds_wgrs_panel_comp_w_sites.txt
-
-# Capture the output
-grep -E 'PSD' 05_compare/panel_vs_wgrs/all_inds_wgrs_panel_comp_w_sites.txt > 05_compare/panel_vs_wgrs/all_inds_wgrs_panel_comp_psd.txt
-```
-
-
-
-
-
-
-
-
 
  
