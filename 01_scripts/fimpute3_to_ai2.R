@@ -105,7 +105,20 @@ all_chr.df <- bind_rows(per_chr_data.list
                      #, .id = "column_label"
                      )
 dim(all_chr.df)
+all_chr.df[1:5,1:5]
 
+# Bring rownames into mname
+all_chr.df$mname <- rownames(all_chr.df)
+
+# Put mname as first column, followed by everything else
+all_chr.df <- all_chr.df %>% select(mname, everything())
+all_chr.df[1:5,1:5]
+
+# Remove double-underscore separator to make it more similar to ai2 output
+all_chr.df$mname <- gsub(pattern = "__", replacement = " ", x = all_chr.df$mname)
+
+# Set output filename
 all_output.FN <- paste0(fi3_folder, "fi3_loci_by_inds_all_imputed_chr.txt")
 
-fwrite(x = all_chr.df, file = all_output.FN, sep = "\t", row.names = T)
+# Write out full dataset, in ai2-format
+fwrite(x = all_chr.df, file = all_output.FN, sep = "\t", row.names = F)
