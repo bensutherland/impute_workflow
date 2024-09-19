@@ -22,6 +22,8 @@ rm(current.path)
 # Set user variables
 #input_folder <- "05_compare/panel_vs_wgrs/" 
 input_folder <- "05_compare/ai2_vs_empirical/"
+#input_folder <- "05_compare/fi3_vs_empirical/"
+
 
 # Set include string to exclude any individuals that should not be in the summary 
 # ...for example, if individuals were used with HD data, and still are present here, exclude them
@@ -55,6 +57,11 @@ concord_by_sample.df$dosage.r.squared <- as.numeric(x = concord_by_sample.df$dos
 concord_by_sample.df$dosage.r <- sqrt(concord_by_sample.df$dosage.r.squared)
 
 # Only keep individuals with include_string, to exclude those that should not be in calculations
+# ..but first, retain excluded samples for inspecting
+concord_by_sample_excluded.df <-  concord_by_sample.df[grep(pattern = include_string, x = concord_by_sample.df$sample, invert = T), ]
+print(paste0("Number individuals removed from the concordance table: ", nrow(concord_by_sample_excluded.df)))
+
+# Only keep those individuals to be included
 concord_by_sample.df <- concord_by_sample.df[grep(pattern = include_string, x = concord_by_sample.df$sample), ]
 paste0("Number of individuals being assessed after excluding drop inds: ", nrow(concord_by_sample.df))
 
@@ -70,6 +77,12 @@ dev.off()
 # Summary
 summary(concord_by_sample.df$dosage.r.squared)
 sd(concord_by_sample.df$dosage.r.squared)
+
+# Summary for excluded
+print("These are the individuals have been removed")
+summary(concord_by_sample_excluded.df$dosage.r.squared)
+sd(concord_by_sample_excluded.df$dosage.r.squared)
+
 
 # # Samples with r2 < 0.5
 # concord_by_sample.df[concord_by_sample.df$dosage.r.squared < 0.5, "sample"]
@@ -87,6 +100,11 @@ dev.off()
 summary(concord_by_sample.df$dosage.r)
 sd(concord_by_sample.df$dosage.r)
 
+# Summary for excluded
+print("These are the individuals have been removed")
+summary(concord_by_sample_excluded.df$dosage.r)
+sd(concord_by_sample_excluded.df$dosage.r)
+
 
 #### 02. Percent concordant per sample (GCTs) ####
 # Load data
@@ -97,10 +115,6 @@ concord_table.df[1:5,1:5]
 colnames(concord_table.df) <- gsub(pattern = "^X\\.[0-9]\\.|^X\\.[0-9][0-9]\\.|^X\\.\\.", replacement = "", x = colnames(concord_table.df))
 colnames(concord_table.df) <- gsub(pattern = "\\.\\.\\.\\.", replacement = "-", x = colnames(concord_table.df))
 concord_table.df[1:5,1:10]
-
-# Only keep individuals with include_string, to exclude those that should not be in calculations
-concord_table.df <- concord_table.df[grep(pattern = include_string, x = concord_table.df$sample), ]
-paste0("Number of individuals being assessed after excluding drop inds: ", nrow(concord_table.df))
 
 # Detect concordant colnames
 columns <- colnames(concord_table.df)
@@ -141,6 +155,14 @@ table(rowSums(concord_table_summary.df[,c("concord_count", "missing_count", "dis
 # Calculate percentage of complete records that are concordant (exclude missing)
 concord_table_summary.df$prop_corr <- concord_table_summary.df$concord_count / (concord_table_summary.df$concord_count + concord_table_summary.df$discord_count)
 
+# Create separate df for the keep inds, or exclude inds
+concord_table_summary_excluded.df <- concord_table_summary.df[grep(pattern = include_string, x = concord_table_summary.df$indiv, invert = T), ]
+
+concord_table_summary.df <- concord_table_summary.df[grep(pattern = include_string, x = concord_table_summary.df$indiv), ]
+paste0("Number of individuals being assessed after excluding drop inds: ", nrow(concord_table_summary.df))
+
+
+
 # Plot histogram of proportion correct (excluding missing)
 pdf(file = paste0(input_folder, "hist_concord_by_sample_proportion_corr.pdf")
     , width = 7.6, height = 4)
@@ -151,9 +173,14 @@ hist(x = concord_table_summary.df$prop_corr, las = 1, main = ""
 )
 dev.off()
 
-# Summary
+# Summary for included
 summary(concord_table_summary.df$prop_corr)
 sd(concord_table_summary.df$prop_corr, na.rm = T)
+
+# Summarize excluded for completeness
+print("These are the values for the excluded individuals")
+summary(concord_table_summary_excluded.df$prop_corr)
+sd(concord_table_summary_excluded.df$prop_corr, na.rm = T)
 
 # Plot proportion correct by missing
 pdf(file = paste0(input_folder, "ppn_concord_by_missing_empirical_data.pdf")
