@@ -268,6 +268,9 @@ cp -l 02_input_data/offspring_hd/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_
 
 
 #### New approach VCF vs. VCF ####
+The inputs to the new approach are typically ai2-formatted (either from ai2 output, or fi3 output converted to ai2 format), and first need to be converted to VCF format. Take the following approach:     
+
+Example for ai2:    
 ```
 # Need to create a VCF file with only the loci present in the imputed output
 # First, identify which regions were output by ai2
@@ -276,7 +279,7 @@ awk '{ print $1 "\t" $2  }' 05_compare/all_chr_combined.txt | grep -vE '^mname' 
 # Second, subset the pre-imputed VCF file to only include these selected regions
 bcftools view --regions-file 05_compare/ai2_imputed_regions.txt 04_impute/all_inds_wgrs_and_panel_biallele.bcf -Ov -o 04_impute/all_inds_wgrs_and_panel_biallele_only_ai2_imputed_regions.vcf
 
-# Convert allele dosage (0,1,2) format to standard VCF format (0/0, 0/1, 1/1)
+# Using ai2 output file, convert allele dosage (0,1,2) format to standard VCF format (0/0, 0/1, 1/1)
 ./01_scripts/ai2_to_vcf_format_step_1.sh
 # ...output will be the input identifier, with "_converted.txt" as suffix
 
@@ -285,19 +288,48 @@ bcftools view --regions-file 05_compare/ai2_imputed_regions.txt 04_impute/all_in
 
 ```
 
+Example for fi3:    
+```
+# Need to create a VCF file with only the loci present in the imputed output
+# First, identify which regions were output by imputation program
+awk '{ print $1 "\t" $2 }' 04_impute/fimpute/fi3_loci_by_inds_all_imputed_chr.txt | grep -vE '^mname' - > 05_compare/fi3_imputed_regions.txt
+
+# Second, subset the pre-imputed VCF file to only include these selected regions
+bcftools view --regions-file 05_compare/fi3_imputed_regions.txt 04_impute/all_inds_wgrs_and_panel_biallele.bcf -Ov -o 04_impute/all_inds_wgrs_and_panel_biallele_only_fi3_imputed_regions.vcf
+
+# Using the output imputation file, convert from allele dosage (0,1,2) format to standard VCF format (0/0, 0/1, 1/1)
+./01_scripts/ai2_to_vcf_format_step_1.sh
+# ...output will be the input identifier, with "_converted.txt" as suffix
+
+# Use the following Rscript to read in the VCF and replace the genotypes in the pre-imputed with the imputed data
+./01_scripts/ai2_to_VCF.R
+# ...output will be the input vcf (w/ regions) identifier, with "_fi3|_ai2_imputed.vcf.gz" 
+```
+
+
 Compare the imputed to the empirical:      
 ```
 # Make a subfolder to keep things tidy
 mkdir 05_compare/ai2_vs_empirical
+
+# or
+mkdir 05_compare/fi3_vs_empirical
 
 # Use a prepared file that has all wgrs genotypes (samples renamed)
 # 05_compare/panel_vs_wgrs/parents_and_offspring_wgrs_renamed.bcf
 
 # Prepare an isec folder
 mkdir 05_compare/ai2_vs_empirical/isec/
+mkdir 05_compare/fi3_vs_empirical/isec
+
+# Will need to prepare the vcf.gz as bcf and index
+bcftools view 04_impute/all_inds_wgrs_and_panel_biallele_only_fi3_imputed.vcf.gz -Ob -o 05_compare/fi3_vs_empirical/all_inds_wgrs_and_panel_biallele_only_fi3_imputed.bcf
 
 # Run isec
 bcftools isec --collapse all 05_compare/all_inds_wgrs_and_panel_biallele_imputed.bcf 05_compare/panel_vs_wgrs/parents_and_offspring_wgrs_renamed.bcf -p 05_compare/ai2_vs_empirical/isec/
+
+# or
+bcftools isec --collapse all 05_compare/fi3_vs_empirical/all_inds_wgrs_and_panel_biallele_only_fi3_imputed.bcf 05_compare/fi3_vs_empirical/parents_and_offspring_wgrs_renamed.bcf -p 05_compare/fi3_vs_empirical/isec/
 
 ## Interpretation
 # 0000.vcf = private to imputed
@@ -306,6 +338,7 @@ bcftools isec --collapse all 05_compare/all_inds_wgrs_and_panel_biallele_imputed
 # 0003.vcf = wgrs, shared
 
 # Save the shared output, this will be used for comparisons
+# note: for fi3, replace the ai2 w/ fi3 below
 bcftools view 05_compare/ai2_vs_empirical/isec/0002.vcf -Ob -o 05_compare/ai2_vs_empirical/all_inds_imputed_shared.bcf
 
 bcftools index 05_compare/ai2_vs_empirical/all_inds_imputed_shared.bcf 
@@ -314,25 +347,20 @@ bcftools view 05_compare/ai2_vs_empirical/isec/0003.vcf -Ob -o 05_compare/ai2_vs
 
 bcftools index 05_compare/ai2_vs_empirical/all_inds_wgrs_shared.bcf
 
+# Clean space
+rm -rf 05_compare/ai2_vs_empirical/isec
 ```
 
 Conduct the actual comparison
 
 ```
-# Specify the samples that you want to compare
-bcftools query -l 05_compare/ai2_vs_empirical/all_inds_wgrs_shared.bcf > 05_compare/ai2_vs_empirical/inds_to_compare.txt
-# ...ensure to use the file with the fewest individuals
-
-bcftools stats -S 05_compare/ai2_vs_empirical/inds_to_compare.txt 05_compare/ai2_vs_empirical/all_inds_wgrs_shared.bcf 05_compare/ai2_vs_empirical/all_inds_imputed_shared.bcf > 05_compare/ai2_vs_empirical/all_inds_wgrs_imputed_comp.txt
-
-# Make subset files with specific sections
-
-grep -E 'GCTs' 05_compare/ai2_vs_empirical/all_inds_wgrs_imputed_comp.txt | grep -v 'GCTs,' > 05_compare/ai2_vs_empirical/all_inds_wgrs_imputed_comp_GCTs.txt
-
-grep -E 'GCsS' 05_compare/ai2_vs_empirical/all_inds_wgrs_imputed_comp.txt | grep -v 'GCsS,' > 05_compare/ai2_vs_empirical/all_inds_wgrs_imputed_comp_GCsS.txt
+./01_scripts/run_bcftools_stats.sh
+# ...set user variables, including target folders and whether per-site should be calculated   
 
 ```
 
+Use the following script to analyze the outputs and generate figures:    
+`01_scripts/assess_bcftools_stats.R`    
 
 
 ### 08. Inspect concordance of shared loci in parents and offspring ###
