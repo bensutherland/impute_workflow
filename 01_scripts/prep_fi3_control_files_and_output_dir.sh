@@ -1,5 +1,5 @@
 #!/bin/bash
-# Prepare FImpute3 control files, must already have run 01_scripts/ai2_to_fimpute3_.R
+# Prepare FImpute3 control files, must already have run 01_scripts/ai2_to_fimpute3.R
 # B. Sutherland (2024-08-29)
 
 # Set user variables
@@ -25,5 +25,5 @@ do
 
 done
 
-# Run Fimpute3 using the next script:  
+# Run Fimpute3 using the next script: 01_scripts/run_fi3_iteratively.sh 
 
