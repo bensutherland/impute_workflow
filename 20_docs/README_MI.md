@@ -58,7 +58,7 @@ bcftools view 06_screen_loci/isec_rem_MERR/0000.vcf -Ob -o 04_impute/all_inds_wg
 # Clean up by deleting the isec folder
 rm -rf 06_screen_loci/isec_rem_MERR
 
-# Proceed with imputation using the new *_no_MERR.bcf file
+# Proceed with imputation using the new *_no_MERR.bcf file in folder 04_impute
 ```
 
 ### 03. Optional: Detect Mendelian incompatibility loci in the wgrs data ###
