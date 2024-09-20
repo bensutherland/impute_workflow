@@ -184,7 +184,7 @@ bcftools index 04_impute/all_inds_wgrs_and_panel_biallele.bcf
 ### 05. Imputation ###
 The data is now all in a single BCF file and is ready for the imputation process.     
 
-Prepare a pedigree file:      
+Prepare pedigree file:      
 ```
 bcftools query -l 04_impute/all_inds_wgrs_and_panel_biallele.bcf > 04_impute/pedigree.csv
 
@@ -194,7 +194,8 @@ bcftools query -l 04_impute/all_inds_wgrs_and_panel_biallele.bcf > 04_impute/ped
 # save as space-delimited    
 ```
 
-Imputation with AlphaImpute2:       
+#### Imputation with AlphaImpute2: ####   
+Prepare data:    
 ```
 # Convert from BCF file to AlphaImpute2 format
 ./01_scripts/bcf_to_ai2.sh
@@ -206,7 +207,10 @@ Imputation with AlphaImpute2:
 # Separate ai2 matrix into individual chr. Set input filename, and string to identify chromosomes.
 01_scripts/prep_geno_matrix_for_ai2.R   
 # produces: 04_impute/ai2_input_<NC_047559.1>.txt, one file per chr 
+```
 
+Impute:    
+```
 # initialize the conda environment
 conda activate ai2
 
@@ -225,52 +229,7 @@ conda activate ai2
 
 ```
 
-Imputation with FImpute3:    
-```
-# Note: the version of FImpute3 used here can only handle fewer than 2 M SNPs per run, so it is necessary to separate the input file into chromosomes before running, then run FImpute3 per chr (as with ai2).     
-
-# Note: the first step expects that the BCF file has already been converted to ai2 format 
-
-# Convert from ai2 to FImpute3 format
-./01_scripts/ai2_to_fimpute3.R
-# ...this creates a pedigree file, a map file per chr, and parts needed for genotypes file per chr
-
-# Edit and combine components needed for per-chr genotypes files
-./01_scripts/prep_fi3_indiv_chr.sh
-
-# Prepare a control file and output run directory per chr 
-./01_scripts/prep_fi3_control_files_and_output_dir.sh
-
-# Run FImpute3 iteratively
-./01_scripts/run_fi3_iteratively.sh
-
-# Convert the FImpute3 output back to alphaimpute2 format for evaluation
-./01_scripts/fimpute3_to_ai2.R
-
-```
-
-
-
-### 07. Evaluate imputation ###
-#### Original custom approach (both ai2 format) ####
-Evaluate results by comparing the imputed data with the 10X 'empirical' data:     
-```
-# Obtain 10X bcf file 
-cp -l 02_input_data/offspring_hd/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_offspring_only_rename.bcf ./05_compare/
-
-# Convert from BCF to ai2 after updating the path and filename
-01_scripts/bcf_to_ai2.sh
-
-# Compare the imputed and empirical ai2 file genotypes by chromosome using: 
-01_scripts/eval_impute_lightweight.R
-# produces plots of average concordance between methods per individual by chromosome, and other outputs to screen
-```
-
-
-#### New approach VCF vs. VCF ####
-The inputs to the new approach are typically ai2-formatted (either from ai2 output, or fi3 output converted to ai2 format), and first need to be converted to VCF format. Take the following approach:     
-
-Example for ai2:    
+Rebuild VCF file from ai2 output:    
 ```
 # Need to create a VCF file with only the loci present in the imputed output
 # First, identify which regions were output by ai2
@@ -286,11 +245,45 @@ bcftools view --regions-file 05_compare/ai2_imputed_regions.txt 04_impute/all_in
 # Use the following Rscript to read in the VCF and replace the genotypes in the pre-imputed with the imputed data
 ./01_scripts/ai2_to_VCF.R
 
+# Convert the output to BCF format
+bcftools view 04_impute/<your_output_file>.vcf.gz -Ob -o 04_impute/all_inds_wgrs_and_panel_biallele_only_no_MERR_ai2_imputed.bcf
+
+# Index the above BCF file
 ```
 
-Example for fi3:    
+Jump to [Evaluate concordance](07-evaluate-imputation).      
+
+
+
+#### Imputation with FImpute3: ####   
+The FImpute3 workflow will start from the pre-imputed, pre-separated AI2 file generated from the BCF file above.     
+ 
+Further prepare data:    
 ```
-# Need to create a VCF file with only the loci present in the imputed output
+# Convert from ai2 to FImpute3 format
+./01_scripts/ai2_to_fimpute3.R
+# ...this creates a pedigree file, a map file per chr, and parts needed for genotypes file per chr
+
+# Edit and combine components needed for per-chr genotypes files
+./01_scripts/prep_fi3_indiv_chr.sh
+
+# Prepare a control file and output run directory per chr 
+./01_scripts/prep_fi3_control_files_and_output_dir.sh
+
+```
+
+Impute:    
+```
+# Run FImpute3 iteratively
+./01_scripts/run_fi3_iteratively.sh
+
+# Convert the FImpute3 output back to ai2 format to prepare for conversion to VCF
+./01_scripts/fimpute3_to_ai2.R
+```
+
+Rebuild VCF file from fi3 output:    
+```
+# Create a VCF file containing only those loci present after imputation
 # First, identify which regions were output by imputation program
 awk '{ print $1 "\t" $2 }' 04_impute/fimpute/fi3_loci_by_inds_all_imputed_chr.txt | grep -vE '^mname' - > 05_compare/fi3_imputed_regions.txt
 
@@ -306,30 +299,30 @@ bcftools view --regions-file 05_compare/fi3_imputed_regions.txt 04_impute/all_in
 # ...output will be the input vcf (w/ regions) identifier, with "_fi3|_ai2_imputed.vcf.gz" 
 ```
 
+Jump to [Evaluate concordance](07-evaluate-imputation).      
 
-Compare the imputed to the empirical:      
+
+### 07. Evaluate imputation ###
+This section will describe how to compare BCF/VCF files.      
+
+Prepare data for comparison:          
+note: use a name below that fits your comparison type, for example `ai2_vs_empirical`, `fi3_vs_empirical`, `wgrs_vs_panel`      
 ```
+# note: this example will use ai2 vs empirical, but other approaches follow the same
+
 # Make a subfolder to keep things tidy
 mkdir 05_compare/ai2_vs_empirical
 
-# or
-mkdir 05_compare/fi3_vs_empirical
-
-# Use a prepared file that has all wgrs genotypes (samples renamed)
+# Copy in both files, for example: 
+# a prepared file that has all wgrs genotypes (samples renamed)
+# 04_impute/all_inds_wgrs_and_panel_biallele_only_no_MERR_ai2_imputed.bcf
 # 05_compare/panel_vs_wgrs/parents_and_offspring_wgrs_renamed.bcf
 
 # Prepare an isec folder
 mkdir 05_compare/ai2_vs_empirical/isec/
-mkdir 05_compare/fi3_vs_empirical/isec
-
-# Will need to prepare the vcf.gz as bcf and index
-bcftools view 04_impute/all_inds_wgrs_and_panel_biallele_only_fi3_imputed.vcf.gz -Ob -o 05_compare/fi3_vs_empirical/all_inds_wgrs_and_panel_biallele_only_fi3_imputed.bcf
 
 # Run isec
-bcftools isec --collapse all 05_compare/all_inds_wgrs_and_panel_biallele_imputed.bcf 05_compare/panel_vs_wgrs/parents_and_offspring_wgrs_renamed.bcf -p 05_compare/ai2_vs_empirical/isec/
-
-# or
-bcftools isec --collapse all 05_compare/fi3_vs_empirical/all_inds_wgrs_and_panel_biallele_only_fi3_imputed.bcf 05_compare/fi3_vs_empirical/parents_and_offspring_wgrs_renamed.bcf -p 05_compare/fi3_vs_empirical/isec/
+bcftools isec --collapse all <imputed_file> <empirical_file> -p 05_compare/ai2_vs_empirical/isec/
 
 ## Interpretation
 # 0000.vcf = private to imputed
@@ -337,30 +330,28 @@ bcftools isec --collapse all 05_compare/fi3_vs_empirical/all_inds_wgrs_and_panel
 # 0002.vcf = imputed, shared
 # 0003.vcf = wgrs, shared
 
-# Save the shared output, this will be used for comparisons
-# note: for fi3, replace the ai2 w/ fi3 below
+# Save the shared output, and index
 bcftools view 05_compare/ai2_vs_empirical/isec/0002.vcf -Ob -o 05_compare/ai2_vs_empirical/all_inds_imputed_shared.bcf
 
 bcftools index 05_compare/ai2_vs_empirical/all_inds_imputed_shared.bcf 
 
-bcftools view 05_compare/ai2_vs_empirical/isec/0003.vcf -Ob -o 05_compare/ai2_vs_empirical/all_inds_wgrs_shared.bcf
+bcftools view 05_compare/ai2_vs_empirical/isec/0003.vcf -Ob -o 05_compare/ai2_vs_empirical/all_inds_empirical_shared.bcf
 
-bcftools index 05_compare/ai2_vs_empirical/all_inds_wgrs_shared.bcf
+bcftools index 05_compare/ai2_vs_empirical/all_inds_empirical_shared.bcf
 
 # Clean space
 rm -rf 05_compare/ai2_vs_empirical/isec
 ```
 
-Conduct the actual comparison
-
+Compare the shared files:    
 ```
+# Compare the genotypes between files, generate output files for comparison
 ./01_scripts/run_bcftools_stats.sh
-# ...set user variables, including target folders and whether per-site should be calculated   
+# note: ...set user variables, including target folders and whether per-site should be calculated   
 
+# Analyze the output, generate figures
+01_scripts/assess_bcftools_stats.R
 ```
-
-Use the following script to analyze the outputs and generate figures:    
-`01_scripts/assess_bcftools_stats.R`    
 
 
 ### 08. Inspect concordance of shared loci in parents and offspring ###
