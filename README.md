@@ -13,7 +13,7 @@ The default pipeline assumes that the high-density and low-density data were gen
 Note: no duplicate individuals (i.e., tech replicates) should be present.    
 
 #### Special Functions ####
-- Screen for Mendelian incompatibilities in panel data [here](20_docs/README_MI.mdi)     
+- Screen for Mendelian incompatibilities in panel data [here](20_docs/README_MI.md)     
 
 
 ### 01. Prepare input data ### 
