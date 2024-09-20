@@ -1,5 +1,5 @@
-# Convert the geno matrix to inputs needed for AlphaImpute2
-#  note: requires that 01_scripts/bcf_to_ai2.sh has already been run
+# Separate AlphaImpute2 (ai2) formatted file into individual chromosome files for use in ai2
+#  note: requires that 01_scripts/bcf_to_ai2.sh has already been run on the target BCF
 # B. Sutherland (2024-07-19)
 
 ### Front Matter ####
@@ -23,7 +23,7 @@ rm(current.path)
 # sessionInfo()
 
 # Set variables
-input.FN             <- "04_impute/all_inds_wgrs_and_panel_biallele_ai2.txt"
+input.FN             <- "04_impute/all_inds_wgrs_and_panel_biallele_no_MERR_ai2.txt"
 chr_indicator.string <- "NC_047"
 output_folder        <- "04_impute/"
 
