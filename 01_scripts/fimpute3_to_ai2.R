@@ -122,3 +122,5 @@ all_output.FN <- paste0(fi3_folder, "fi3_loci_by_inds_all_imputed_chr.txt")
 
 # Write out full dataset, in ai2-format
 fwrite(x = all_chr.df, file = all_output.FN, sep = "\t", row.names = F)
+
+# Next: 

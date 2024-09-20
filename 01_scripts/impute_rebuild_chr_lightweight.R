@@ -44,6 +44,9 @@ for(i in 1:length(input_files.vec)){
   imputed_chr.df <- fread(file = input.FN)
   imputed_chr.df <- as.data.frame(x = imputed_chr.df)
   
+  # Reporting
+  print(paste0("The number of SNPs for this chr in the imputed data is: ", ncol(imputed_chr.df)-1))
+  
   # Transpose to match ai2 input format
   imputed_chr.df <- t(imputed_chr.df)
   imputed_chr.df <- as.data.frame(x = imputed_chr.df)
