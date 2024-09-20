@@ -7,7 +7,7 @@
 INPUT_FOLDER="05_compare"
 COMPARISON_FOLDER="ai2_vs_empirical"
 BCF1="all_inds_imputed_shared.bcf"
-BCF2="all_inds_wgrs_shared.bcf"
+BCF2="all_inds_empirical_shared.bcf"
 PER_SITE=false # set as true or false
 
 ## Compare the two BCF files
@@ -53,5 +53,4 @@ fi
 # Report finish and next step
 echo "Stats calculated, sections subset and saved to output folder."
 echo "Go to 01_scripts/bcftools_stats.R"   
-
 
