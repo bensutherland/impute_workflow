@@ -251,7 +251,7 @@ bcftools view 04_impute/<your_output_file>.vcf.gz -Ob -o 04_impute/all_inds_wgrs
 # Index the above BCF file
 ```
 
-Jump to [Evaluate concordance](07-evaluate-imputation).      
+Jump to [Evaluate concordance](#07-evaluate-imputation).      
 
 
 
@@ -299,7 +299,7 @@ bcftools view --regions-file 05_compare/fi3_imputed_regions.txt 04_impute/all_in
 # ...output will be the input vcf (w/ regions) identifier, with "_fi3|_ai2_imputed.vcf.gz" 
 ```
 
-Jump to [Evaluate concordance](07-evaluate-imputation).      
+Jump to [Evaluate concordance](#07-evaluate-imputation).      
 
 
 ### 07. Evaluate imputation ###
