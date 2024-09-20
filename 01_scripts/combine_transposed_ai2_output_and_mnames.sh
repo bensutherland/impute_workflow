@@ -1,11 +1,15 @@
 #!/bin/bash
 # Combine transposed output and add mname column back into data
+# note: requires that the string in the mname column is the same string provided to the Rscript
+#   used to identify the chromosomes
+# note: requires that the original ai2 file is sorted alphabetically by chromosome name and position
+#   otherwise matching will not work
 # B. Sutherland (2024-07-23)
 
 # Set user variables
 INPUT_FOLDER="05_compare/"
 INPUT_PATTERN=".genotypes_transposed_to_combine.txt"
-ORGN_AI2_FILE="04_impute/all_inds_wgrs_and_panel_biallele_ai2.txt"
+ORGN_AI2_FILE="04_impute/all_inds_wgrs_and_panel_biallele_no_MERR_ai2.txt"
 
 # Combine all imputed datafiles 
 cat "$INPUT_FOLDER"/*"$INPUT_PATTERN" > "$INPUT_FOLDER"/all_chr_combined_temp.txt
