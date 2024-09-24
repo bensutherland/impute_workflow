@@ -291,12 +291,18 @@ awk '{ print $1 "\t" $2 }' 04_impute/fimpute/fi3_loci_by_inds_all_imputed_chr.tx
 bcftools view --regions-file 05_compare/fi3_imputed_regions.txt 04_impute/all_inds_wgrs_and_panel_biallele.bcf -Ov -o 04_impute/all_inds_wgrs_and_panel_biallele_only_fi3_imputed_regions.vcf
 
 # Using the output imputation file, convert from allele dosage (0,1,2) format to standard VCF format (0/0, 0/1, 1/1)
+# note: set input folder and input ai2-formatted file
 ./01_scripts/ai2_to_vcf_format_step_1.sh
 # ...output will be the input identifier, with "_converted.txt" as suffix
 
 # Use the following Rscript to read in the VCF and replace the genotypes in the pre-imputed with the imputed data
 ./01_scripts/ai2_to_VCF.R
 # ...output will be the input vcf (w/ regions) identifier, with "_fi3|_ai2_imputed.vcf.gz" 
+
+# Convert the output to BCF format
+bcftools view 04_impute/<your_output_file>.vcf.gz -Ob -o 04_impute/all_inds_wgrs_and_panel_biallele_only_no_MERR_fi3_imputed.bcf
+
+# Index the above BCF file
 ```
 
 Jump to [Evaluate concordance](#07-evaluate-imputation).      
@@ -353,68 +359,3 @@ Compare the shared files:
 01_scripts/assess_bcftools_stats.R
 ```
 
-
-### 08. Inspect concordance of shared loci in parents and offspring ###
-Evaluate the concordance of the shared loci in the panel and wgrs data for both the parents and offspring. First, prepare the data:     
-```
-# Make a subfolder to keep things tidy
-mkdir 05_compare/panel_vs_wgrs
-
-# Copy in all datasets (note: filenames must be different)   
-cp -l 02_input_data/parent_hd/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_parents_only_rename.bcf* 05_compare/panel_vs_wgrs/
-
-cp -l 02_input_data/parent_ld/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_parents_only_rename.bcf* ./05_compare/panel_vs_wgrs/
-
-cp -l 02_input_data/offspring_hd/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_offspring_only_rename.bcf* 05_compare/panel_vs_wgrs/
-
-cp -l 02_input_data/offspring_ld/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_offspring_only_rename.bcf* 05_compare/panel_vs_wgrs/
-
-# Merge the wgrs data back together
-bcftools merge 05_compare/panel_vs_wgrs/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_parents_only_rename.bcf 05_compare/panel_vs_wgrs/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_offspring_only_rename.bcf -Ob -o 05_compare/panel_vs_wgrs/parents_and_offspring_wgrs_renamed.bcf  
-
-bcftools index 05_compare/panel_vs_wgrs/parents_and_offspring_wgrs_renamed.bcf
-
-# Merge the panel data back together
-bcftools merge 05_compare/panel_vs_wgrs/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_parents_only_rename.bcf 05_compare/panel_vs_wgrs/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_offspring_only_rename.bcf -Ob -o 05_compare/panel_vs_wgrs/parents_and_offspring_panel_renamed.bcf
-
-bcftools index 05_compare/panel_vs_wgrs/parents_and_offspring_panel_renamed.bcf
-
-```
-
-Prepare files that only contain common loci between the platforms:     
-```
-mkdir 05_compare/panel_vs_wgrs/isec/
-
-# run isec to identify overlapping or private loci. Include flag '--collapse all' to consider overlap regardless of alleles.    
-bcftools isec --collapse all 05_compare/panel_vs_wgrs/parents_and_offspring_wgrs_renamed.bcf 05_compare/panel_vs_wgrs/parents_and_offspring_panel_renamed.bcf -p 05_compare/panel_vs_wgrs/isec/
-
-## Interpretation:    
-# 0000.vcf = wgrs, private
-# 0001.vcf = panel, private
-# 0002.vcf = wgrs, shared
-# 0003.vcf = panel, shared
-
-# Save the shared output, this will be used for comparisons
-bcftools view 05_compare/panel_vs_wgrs/isec/0002.vcf -Ob -o 05_compare/panel_vs_wgrs/all_inds_wgrs_shared.bcf  
-
-bcftools index 05_compare/panel_vs_wgrs/all_inds_wgrs_shared.bcf
-
-bcftools view 05_compare/panel_vs_wgrs/isec/0003.vcf -Ob -o 05_compare/panel_vs_wgrs/all_inds_panel_shared.bcf
-
-bcftools index 05_compare/panel_vs_wgrs/all_inds_panel_shared.bcf
-
-# Clean the space
-rm -rf 05_compare/panel_vs_wgrs/isec
-```
-
-Make the actual comparisons
-```
-./01_scripts/run_bcftools_stats.sh
-# ...set user variables, including target folders and whether per-site should be calculated   
-
-```
-
-Use the following script to analyze the outputs and generate figures:    
-`01_scripts/assess_bcftools_stats.R`    
-
- 
