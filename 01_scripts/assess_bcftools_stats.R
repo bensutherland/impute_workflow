@@ -21,8 +21,8 @@ rm(current.path)
 
 # Set user variables
 #input_folder <- "05_compare/panel_vs_wgrs/" 
-input_folder <- "05_compare/ai2_vs_empirical/"
-#input_folder <- "05_compare/fi3_vs_empirical/"
+#input_folder <- "05_compare/ai2_vs_empirical/"
+input_folder <- "05_compare/fi3_vs_empirical/"
 
 
 # Set include string to exclude any individuals that should not be in the summary 

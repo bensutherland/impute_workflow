@@ -20,10 +20,11 @@ setwd(current.path)
 rm(current.path)
 
 # Set user variables
-pre_impute_VCF.FN  <- "04_impute/all_inds_wgrs_and_panel_biallele_only_no_MERR_ai2_imputed_regions.vcf" # this is the pre-impute VCF, subset to only incl the loci retained after the ai2 imputation
+#pre_impute_VCF.FN  <- "04_impute/all_inds_wgrs_and_panel_biallele_only_no_MERR_ai2_imputed_regions.vcf" # this is the pre-impute VCF, subset to only incl the loci retained after the ai2 imputation
 #pre_impute_VCF.FN  <- "04_impute/all_inds_wgrs_and_panel_biallele_only_fi3_imputed_regions.vcf" # this is the pre-impute VCF, subset to only incl the loci retained after the ai2 imputation
-post_impute_ai2.FN <- "05_compare/all_chr_combined_converted.txt"
-#post_impute_ai2.FN <- "04_impute/fimpute/fi3_loci_by_inds_all_imputed_chr_converted.txt"
+pre_impute_VCF.FN  <- "04_impute/all_inds_wgrs_and_panel_biallele_only_no_MERR_fi3_imputed_regions.vcf" # this is the pre-impute VCF, subset to only incl the loci retained after the ai2 imputation
+#post_impute_ai2.FN <- "05_compare/all_chr_combined_converted.txt"
+post_impute_ai2.FN <- "04_impute/fimpute/fi3_loci_by_inds_all_imputed_chr_converted.txt"
 
 
 #### 01. Load data ####

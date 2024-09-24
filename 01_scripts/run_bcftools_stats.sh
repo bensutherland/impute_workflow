@@ -5,7 +5,7 @@
 
 # Set user variables
 INPUT_FOLDER="05_compare"
-COMPARISON_FOLDER="ai2_vs_empirical"
+COMPARISON_FOLDER="fi3_vs_empirical"
 BCF1="all_inds_imputed_shared.bcf"
 BCF2="all_inds_empirical_shared.bcf"
 PER_SITE=false # set as true or false
