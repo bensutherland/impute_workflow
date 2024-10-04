@@ -117,3 +117,5 @@ write.table(x = gemma_gwas, file = gsub(pattern = "\\.txt", replacement = "_w_an
 
 # Write out as R object so can be easily loaded back
 save.image(file = gsub(pattern = "\\.txt", replacement = ".RData", x = gemma_output.FN))
+# Downstream will use gemma_gwas object to multi-pannel plot GWAS output
+

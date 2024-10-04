@@ -97,6 +97,12 @@ bcftools reheader --samples 02_input_data/offspring_ld_samplelist_for_rename.txt
 bcftools index 02_input_data/offspring_ld/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_offspring_only_rename.bcf
 ```
 
+Before leaving this section, create a useful file that can be used later, for example in plotting, that indicates what SNPs were from the panel originally:     
+```
+# Collect the names (i.e., 'chr__pos') of the panel variants
+bcftools view 02_input_data/offspring_ld/mpileup_calls_noindel5_miss0.2_SNP_q0_avgDP10_biallele_minDP4_maxDP100000_miss0.2_offspring_only_rename.bcf | grep -vE '^#' - | awk '{ print $1 "__" $2 }' - > 07_GWAS/denovo_snp_ids.txt
+```
+
 
 ### 02. Exclude panel loci from parent wgrs data ###
 Before merging parent wgrs and panel data, all overlapping loci between the two will be dropped from the wgrs dataset. Note: this will also give substrate for direct comparison of overlapping loci (see next section).     
