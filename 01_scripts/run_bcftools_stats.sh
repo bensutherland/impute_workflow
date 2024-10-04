@@ -4,11 +4,11 @@
 # B. Sutherland (2024-09-17)
 
 # Set user variables
-INPUT_FOLDER="05_compare"
-COMPARISON_FOLDER="fi3_vs_empirical"
+INPUT_FOLDER="05_compare_all_loci"
+COMPARISON_FOLDER="ai2_vs_empirical"
 BCF1="all_inds_imputed_shared.bcf"
 BCF2="all_inds_empirical_shared.bcf"
-PER_SITE=false # set as true or false
+PER_SITE=true # set as true or false
 
 ## Compare the two BCF files
 # Specify the samples to be run (set BCF2 as the file with fewest samples)
@@ -52,5 +52,5 @@ fi
   
 # Report finish and next step
 echo "Stats calculated, sections subset and saved to output folder."
-echo "Go to 01_scripts/bcftools_stats.R"   
+echo "Go to 01_scripts/assess_bcftools_stats.R"   
 
