@@ -12,6 +12,7 @@
 #install.packages("rstudioapi")
 library(rstudioapi)
 library(tidyr)
+library(ggpubr)
 
 # Set working directory
 current.path <- dirname(rstudioapi::getSourceEditorContext()$path)
@@ -20,9 +21,9 @@ setwd(current.path)
 rm(current.path)
 
 # Set user variables
-#input_folder <- "05_compare/panel_vs_wgrs/" 
+input_folder <- "05_compare_all_loci/panel_vs_wgrs/" 
 #input_folder <- "05_compare/ai2_vs_empirical/"
-input_folder <- "05_compare/fi3_vs_empirical/"
+#input_folder <- "05_compare/fi3_vs_empirical/"
 
 
 # Set include string to exclude any individuals that should not be in the summary 
@@ -31,6 +32,8 @@ include_string <- "ASY2"
 
 # TODO: optional - include list of samples to drop, if can't exclude using include_string
 
+# Plotting options
+plot_type <- "include_PSD"
 
 # Build full filenames
 input_GCTs.FN <- paste0(input_folder, "GCTs.txt")
@@ -95,6 +98,16 @@ hist(x = concord_by_sample.df$dosage.r, las = 1, main = ""
      , xlim = c(0,1)
 )
 dev.off()
+
+# Plot histogram (r-value) with ggplot2
+hist_plot_rval <- concord_by_sample.df %>%
+                  ggplot( aes(x=dosage.r)) +
+                  geom_histogram( bins=40, fill="darkgrey", color="#e9ecef") +
+                  theme_bw()+
+                  labs(x = "Per sample allelic dosage (r-value)") + 
+                  xlim(0.5, 1)
+  
+hist_plot_rval
 
 # Summary
 summary(concord_by_sample.df$dosage.r)
@@ -177,10 +190,23 @@ dev.off()
 summary(concord_table_summary.df$prop_corr)
 sd(concord_table_summary.df$prop_corr, na.rm = T)
 
+# Plot histogram (r-value) with ggplot2
+hist_plot_prop_concord <- concord_table_summary.df %>%
+  ggplot( aes(x=prop_corr)) +
+  geom_histogram( bins=40, fill="darkgrey", color="#e9ecef") +
+  theme_bw()+
+  labs(x = "Per sample proportion concordant") + 
+  xlim(0.5, 1)
+
+hist_plot_prop_concord
+
+
 # Summarize excluded for completeness
 print("These are the values for the excluded individuals")
 summary(concord_table_summary_excluded.df$prop_corr)
 sd(concord_table_summary_excluded.df$prop_corr, na.rm = T)
+
+
 
 # Plot proportion correct by missing
 pdf(file = paste0(input_folder, "ppn_concord_by_missing_empirical_data.pdf")
@@ -191,9 +217,18 @@ plot(x = concord_table_summary.df$missing_count, y = concord_table_summary.df$pr
      )
 dev.off()
 
+# ggplot option
+scatter_missing_by_prop_concord <- ggplot(concord_table_summary.df, aes(prop_corr, missing_count)) + 
+                                        geom_point() + 
+                                        theme_bw() + 
+                                        labs(x = "Per sample proportion concordant", y = "Per sample missing") + 
+                                        xlim(0.5, 1)
+  
+scatter_missing_by_prop_concord
+
 
 #### 03. Per-site discordance (PSD) ####
-if(exists(x = input_PSD.FN)){
+if(file.exists(x = input_PSD.FN)){
   
   # Load data
   psd_table.df  <- read.delim2(file = input_PSD.FN, header = T, sep = "\t")
@@ -234,10 +269,40 @@ if(exists(x = input_PSD.FN)){
   summary(psd_table_clean.df$percent.corr)
   sd(psd_table_clean.df$percent.corr, na.rm = T)
   
+  # ggplot option
+  psd_plot <- psd_table.df %>% 
+                ggplot( aes(x = percent.corr)) + 
+                geom_histogram( bins = 20, fill = "darkgrey", color = "#e9ecef") + 
+                theme_bw() + 
+                labs(x = "Per locus proportion concordant")
+  psd_plot
+  
+  psd_plot
+  
+  
 }else{
   
   print(paste0("No PSD file is present in ", input_folder))
   
 }
+
+
+# Create multipanel plot
+if(plot_type=="include_PSD"){
+  
+  final.figure <- ggarrange(hist_plot_prop_concord, hist_plot_rval
+                            , scatter_missing_by_prop_concord, psd_plot
+                            , labels = c("A", "B", "C", "D")
+                            , ncol = 2, nrow = 2
+  )
+  
+  pdf(file = paste0(input_folder, "multipanel_concord_w_PSD.pdf"), width = 8, height = 4.5)
+  print(final.figure)
+  dev.off()
+  
+}
+
+
+
 
 # End of assessment of bcftools stats output
