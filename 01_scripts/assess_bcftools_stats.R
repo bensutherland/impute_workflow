@@ -22,8 +22,8 @@ rm(current.path)
 
 # Set user variables
 #input_folder <- "05_compare_all_loci/panel_vs_wgrs/" 
-input_folder <- "05_compare_all_loci/ai2_vs_empirical/"
-#input_folder <- "05_compare_all_loci/fi3_vs_empirical/"
+#input_folder <- "05_compare_all_loci/ai2_vs_empirical/"
+input_folder <- "05_compare_all_loci/fi3_vs_empirical/"
 
 
 # Set include string to exclude any individuals that should not be in the summary 
@@ -40,9 +40,6 @@ plot_type <- "include_PSD" # Was per-site discordance calculated?
 input_GCTs.FN <- paste0(input_folder, "GCTs.txt")
 input_GCsS.FN <- paste0(input_folder, "GCsS.txt")
 input_PSD.FN  <- paste0(input_folder, "PSD.txt")
-
-# Not yet implemented
-#r_type <- "not_squared"
 
 
 #### 01. R-squared value per sample (GCsS) ####
@@ -321,8 +318,6 @@ if(plot_type=="include_PSD"){
   save.image(file = paste0(input_folder, "assess_bcftools_stats_output_for_plots.RData"))
   
 }
-
-
 
 
 # End of assessment of bcftools stats output
