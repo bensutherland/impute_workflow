@@ -22,8 +22,8 @@ rm(current.path)
 
 # Set user variables
 #input_folder <- "05_compare_all_loci/panel_vs_wgrs/" 
-#input_folder <- "05_compare_all_loci/ai2_vs_empirical/"
-input_folder <- "05_compare_all_loci/fi3_vs_empirical/"
+input_folder <- "05_compare_all_loci/ai2_vs_empirical/"
+#input_folder <- "05_compare_all_loci/fi3_vs_empirical/"
 
 
 # Set include string to exclude any individuals that should not be in the summary 
@@ -33,8 +33,8 @@ include_string <- "ASY2"
 # TODO: optional - include list of samples to drop, if can't exclude using include_string
 
 # Plotting options
-#plot_type <- "include_PSD" # Was per-site discordance calculated? 
-plot_type <- "no_PSD"
+plot_type <- "include_PSD" # Was per-site discordance calculated? 
+#plot_type <- "no_PSD"
 
 # Build full filenames
 input_GCTs.FN <- paste0(input_folder, "GCTs.txt")
@@ -191,7 +191,7 @@ dev.off()
 summary(concord_table_summary.df$prop_corr)
 sd(concord_table_summary.df$prop_corr, na.rm = T)
 
-# Plot histogram (r-value) with ggplot2
+# Plot histogram (concordance) with ggplot2
 hist_plot_prop_concord <- concord_table_summary.df %>%
   ggplot( aes(x=prop_corr)) +
   geom_histogram( bins=40, fill="darkgrey", color="#e9ecef") +
@@ -245,21 +245,30 @@ if(file.exists(x = input_PSD.FN)){
   psd_table.df$percent.corr <- psd_table.df$Number.of.matches / (psd_table.df$Number.of.matches + psd_table.df$Number.of.mismatches)
   psd_table.df$num_typed <- psd_table.df$Number.of.matches + psd_table.df$Number.of.mismatches
   
-  pdf(file = "05_compare/panel_vs_wgrs/per_locus_percent_corr.pdf", width = 7.6, height = 4)
+  pdf(file = paste0(input_folder, "per_locus_percent_corr.pdf"), width = 7.6, height = 4)
   hist(psd_table.df$percent.corr, main = "", xlab = "Percent correct (%)", las = 1)
   dev.off()
   
-  pdf(file = "05_compare/panel_vs_wgrs/per_locus_percent_corr_by_num_typed.pdf", width = 7.6, height = 4)
-  plot(y = psd_table.df$percent.corr, x = psd_table.df$num_typed, las = 1
-       , ylab = "Percent correct (%)", xlab = "Number loci typed"
-  )
-  dev.off()
+  if(nrow(psd_table.df) < 10000){
+    
+    pdf(file = paste0(input_folder, "per_locus_percent_corr_by_num_typed.pdf"), width = 7.6, height = 4)
+    plot(y = psd_table.df$percent.corr, x = psd_table.df$num_typed, las = 1
+         , ylab = "Percent correct (%)", xlab = "Number loci typed"
+    )
+    dev.off()
+    
+    
+  }else{
+    
+    print("Too many loci to plot, don't crash the program.")
+    
+  }
   
   # How many loci have lower than cutoff percent correct? 
   bad_loci <- psd_table.df[psd_table.df$percent.corr < 0.5, "locus_id"]
-  length(bad_loci)
-  write.table(x = bad_loci, file = "05_compare/panel_vs_wgrs/bad_loci.txt", col.names = F, row.names = F)
-  nrow(psd_table.df)
+  length(bad_loci)   # 'bad' loci
+  nrow(psd_table.df) # All loci
+  write.table(x = bad_loci, file = paste0(input_folder, "bad_loci.txt"), col.names = F, row.names = F)
   
   # Summary
   summary(psd_table.df$percent.corr)
@@ -278,7 +287,10 @@ if(file.exists(x = input_PSD.FN)){
                 labs(x = "Per locus proportion concordant")
   psd_plot
   
-  psd_plot
+  pdf(file = paste0(input_folder, "per_locus_percent_corr_ggplot_hist.pdf"), width = 7.6, height = 4)
+  print(psd_plot)
+  dev.off()
+  
   
   
 }else{
@@ -300,6 +312,8 @@ if(plot_type=="include_PSD"){
   pdf(file = paste0(input_folder, "multipanel_concord_w_PSD.pdf"), width = 8, height = 4.5)
   print(final.figure)
   dev.off()
+  
+  save.image(file = paste0(input_folder, "assess_bcftools_stats_output_for_plots.RData"))
   
 }else{
   
