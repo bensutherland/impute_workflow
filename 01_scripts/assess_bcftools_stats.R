@@ -21,9 +21,9 @@ setwd(current.path)
 rm(current.path)
 
 # Set user variables
-input_folder <- "05_compare_all_loci/panel_vs_wgrs/" 
-#input_folder <- "05_compare/ai2_vs_empirical/"
-#input_folder <- "05_compare/fi3_vs_empirical/"
+#input_folder <- "05_compare_all_loci/panel_vs_wgrs/" 
+#input_folder <- "05_compare_all_loci/ai2_vs_empirical/"
+input_folder <- "05_compare_all_loci/fi3_vs_empirical/"
 
 
 # Set include string to exclude any individuals that should not be in the summary 
@@ -33,7 +33,8 @@ include_string <- "ASY2"
 # TODO: optional - include list of samples to drop, if can't exclude using include_string
 
 # Plotting options
-plot_type <- "include_PSD"
+#plot_type <- "include_PSD" # Was per-site discordance calculated? 
+plot_type <- "no_PSD"
 
 # Build full filenames
 input_GCTs.FN <- paste0(input_folder, "GCTs.txt")
@@ -299,6 +300,11 @@ if(plot_type=="include_PSD"){
   pdf(file = paste0(input_folder, "multipanel_concord_w_PSD.pdf"), width = 8, height = 4.5)
   print(final.figure)
   dev.off()
+  
+}else{
+  
+  print("Not printing a full four-panel figure, saving out the concordant and dosage R-value")
+  save.image(file = paste0(input_folder, "assess_bcftools_stats_output_for_plots.RData"))
   
 }
 
