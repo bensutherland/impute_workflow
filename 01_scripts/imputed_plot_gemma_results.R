@@ -30,6 +30,9 @@ rm(current.path)
 gemma_output.FN       <- "07_GWAS/output/gwas_all_fam_covariate.assoc.txt"
 phenotype_of_interest <- "survival_state" # DPE or survival_state
 highlight_snps.FN <- "07_GWAS/denovo_snp_ids.txt"
+caution_zones.FN <- "chr_locs_w_multimapper_loci.txt"  # This is if you are using multimappers to plot
+
+plotting_multimappers <- FALSE # Set as TRUE if you want to plot multimappers and have the files available
 
 # Read in data
 gemma_gwas <- fread(file = gemma_output.FN, header = T)
@@ -38,6 +41,15 @@ head(gemma_gwas)
 
 highlight_snps.df <- read.delim(file = highlight_snps.FN, header = F, sep = "\t")
 head(highlight_snps.df)
+
+if(plotting_multimappers == TRUE){
+  
+  caution_zones.df <- read.delim(file = caution_zones.FN, header = T, sep = "\t")
+  head(caution_zones.df)
+  nrow(caution_zones.df)
+  
+}
+
 
 # Convert mname into chr and pos
 gemma_gwas <- separate(data = gemma_gwas, col = "rs", into = c("chr", "pos"), sep = "__", remove = F)
@@ -114,6 +126,81 @@ gemma_gwas$panel_snp <- gemma_gwas$rs %in% highlight.vec
 write.table(x = gemma_gwas, file = gsub(pattern = "\\.txt", replacement = "_w_annot.txt", x =  gemma_output.FN)
             , sep = "\t", quote = F, row.names = F, col.names = T
             )
+
+#### Multimapper caution zones ####
+
+if(plotting_multimappers == TRUE){
+  
+  
+        # Create identifier for matching
+        caution_zones.vec <- paste0(caution_zones.df$chr, "__", caution_zones.df$pos)
+        
+        # How many directly are observed in the GEMMA output?
+        caution_zones.vec[caution_zones.vec %in% gemma_gwas$rs]
+        
+        # Add some details to the caution zones df including up and downstream from the locus position
+        head(caution_zones.df)
+        str(caution_zones.df)
+        caution_zones.df$upstream_loc <- caution_zones.df$pos - 100
+        caution_zones.df$downstream_loc <- caution_zones.df$pos + 100
+        head(caution_zones.df)
+        
+        # Separate the chr (scaffold) and position (scaff.pos) back in the GEMMA output
+        gemma_gwas <- separate(data = gemma_gwas, col = "rs"
+                               , into = c("scaffold", "scaff.pos"), sep = "__", remove = F
+                               )
+        gemma_gwas$scaff.pos <- as.numeric(gemma_gwas$scaff.pos) # ensure numeric
+        
+        # For each row of the caution zone df, identify if there are any GEMMA results in that section, and 
+        #  if so, record their names
+        head(gemma_gwas)
+        gemma_gwas$caution_zone <- NA
+        
+        chr.oi <- NULL; slice <- NULL; problem_loci <- NULL; problem_vec <- NULL
+        for(i in 1:nrow(caution_zones.df)){
+          
+          # Identify the chromosome of interest
+          chr.oi <- caution_zones.df$chr[i]
+          
+          # Isolate the GEMMA results to only this chr
+          slice <- gemma_gwas[gemma_gwas$scaffold==chr.oi, ]
+          
+          # Identify loci that are within the problem zones in this slice
+          problem_loci <- slice[slice$scaff.pos >= caution_zones.df$upstream_loc[i] & slice$scaff.pos <= caution_zones.df$downstream_loc[i], "rs"] 
+          
+          # Retain all problem loci in a vector for highlighting below
+          problem_vec <- c(problem_loci, problem_vec)
+          
+        }
+        
+        
+        length(problem_vec)
+        
+        # Plot
+        pdf(file = paste0("07_GWAS/Manhattan_plot_", phenotype_of_interest, "_annotated_with_multimapper_zones.pdf"), width = 10.8, height = 5.2)
+        par(mfrow = c(1,1), mar = c(5,4,4,2) +0.1, mgp = c(3,1,0))
+        fastman(m = gemma_gwas, chr = "chr", bp = "pos", p = "p_wald", snp = "rs"
+                , genomewideline = -log10(0.05/nrow(gemma_gwas))
+                , suggestiveline = FALSE
+                #, cex = 1.5
+                #, cex = gemma_gwas$cex
+                #, cex = ifelse(gemma_gwas$SNP %in% highlight_vec, 5, 1)
+                , cex = 0.7
+                , cex.lab = 1
+                , cex.axis = 1
+                #, ylim = c(0,10)
+                , col = "Set2"
+                , highlight = problem_vec
+                , annotateHighlight = T
+                #, annotateTop=FALSE
+                , annotationCol = "black"
+                , annotationAngle= 55
+        )
+        dev.off()
+}
+
+
+
 
 # Write out as R object so can be easily loaded back
 save.image(file = gsub(pattern = "\\.txt", replacement = ".RData", x = gemma_output.FN))
