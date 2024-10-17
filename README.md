@@ -365,3 +365,25 @@ Compare the shared files:
 01_scripts/assess_bcftools_stats.R
 ```
 
+
+### 08. Calculate and evaluate impact of MAF ###
+To inspect the effects of allele frequency or minor allele frequency, take the following steps:    
+```
+# Add all tags to the target imputed VCF file
+bcftools +fill-tags 04_impute_all_loci/all_inds_wgrs_and_panel_biallele_only_fi3_imputed.vcf.gz -Ob -o 04_impute_all_loci/all_inds_wgrs_and_panel_biallele_only_fi3_imputed_with_tags.bcf
+# ...here we will be interested in tags AF or MAF
+# note: the MAF field will be the minor allele, not just the non-ref allele, so a completely homozygous alternate allele locus will have AF=1 and MAF=0
+
+# If want to focus on AF for plotting alongside concordance from PSD file
+bcftools query -f '%CHROM %POS %AF\n' file.bcf > output.txt 
+
+# If want to focus on MAF
+bcftools query -f '%CHROM %POS %MAF\n' 04_impute_all_loci/all_inds_wgrs_and_panel_biallele_only_fi3_imputed_with_tags.bcf > 04_impute_all_loci/all_inds_wgrs_and_panel_biallele_only_fi3_imputed_with_tags_perloc_MAF.txt
+
+```
+
+Plot with:    
+`plot_psd_across_chr.R`    
+
+
+
