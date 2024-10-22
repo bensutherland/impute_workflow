@@ -27,7 +27,8 @@ setwd(current.path)
 rm(current.path)
 
 # User set variables
-gemma_output.FN       <- "07_GWAS/output/gwas_all_fam.assoc.txt"
+#gemma_output.FN       <- "07_GWAS/ai2_imputed_survival_state_pheno/output/gwas_all_fam_covariate.assoc.txt"
+gemma_output.FN       <- "07_GWAS/fi3_imputed_survival_state_pheno/output/gwas_all_fam_covariate.assoc.txt"
 phenotype_of_interest <- "survival_state" # DPE or survival_state
 highlight_snps.FN <- "07_GWAS/denovo_snp_ids.txt"
 caution_zones.FN <- "chr_locs_w_multimapper_loci.txt"  # This is if you are using multimappers to plot
@@ -80,13 +81,15 @@ gemma_gwas <- gemma_gwas[with(gemma_gwas, order(gemma_gwas$chr)), ]
 
 
 #### 03. Plotting ####
+output.FN <- gsub(pattern = "\\/output.*", replacement = "", x = gemma_output.FN)
+
 # Plot p-val histogram
-pdf(file = paste0("07_GWAS/pval_hist_", phenotype_of_interest, ".pdf"), width = 7.5, height = 4.5)
+pdf(file = paste0(output.FN, "/pval_hist_", phenotype_of_interest, ".pdf"), width = 7.5, height = 4.5)
 hist(gemma_gwas$p_wald, breaks = 20)
 dev.off()
 
 # Plot Manhattan plot (default)
-pdf(file = paste0("07_GWAS/Manhattan_plot_", phenotype_of_interest, ".pdf"), width = 11, height = 7)
+pdf(file = paste0(output.FN, "/Manhattan_plot_", phenotype_of_interest, ".pdf"), width = 9, height = 3.5)
 par(mfrow = c(1,1), mar = c(5,4,4,2) +0.1, mgp = c(3,1,0))
 fastman(m = gemma_gwas, chr = "chr", bp = "pos", p = "p_wald"
         , genomewideline = -log10(0.05/nrow(gemma_gwas))
@@ -213,6 +216,6 @@ if(plotting_multimappers == TRUE){
 
 #### 06. Save out final results ####
 # Write out as R object so can be easily loaded back
-save.image(file = gsub(pattern = "\\.txt", replacement = ".RData", x = gemma_output.FN))
+save.image(file = paste0(output.FN, "/post-plot.RData"))
 # Downstream will use gemma_gwas object to multi-pannel plot GWAS output
 
