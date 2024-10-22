@@ -21,12 +21,12 @@ setwd(current.path)
 rm(current.path)
 
 # Set user variables
-input_folder <- "05_compare_all_loci/panel_vs_wgrs/" 
+#input_folder <- "05_compare_all_loci/panel_vs_wgrs/" 
 #input_folder <- "05_compare_all_loci/ai2_vs_empirical/"
-#input_folder <- "05_compare_all_loci/fi3_vs_empirical/"
+input_folder <- "05_compare_all_loci/fi3_vs_empirical/"
 
 # Set include string to identify the individuals that should be in the summary 
-remove_inds    <- FALSE
+remove_inds    <- TRUE
 include_string <- "ASY2"
 # note: if working with imputation and individuals were used with HD data they should be excluded here
 
@@ -59,7 +59,7 @@ concord_by_sample.df$dosage.r <- sqrt(concord_by_sample.df$dosage.r.squared)
 empty_ind <- concord_by_sample.df[rowSums(concord_by_sample.df[, grep(pattern = "matches", x = colnames(concord_by_sample.df))])==0, "sample"]
 print(paste0("Removing ", empty_ind, " due to no records present"))
 nrow(concord_by_sample.df) # before any removal
-concord_by_sample.df <- concord_by_sample.df[concord_by_sample.df$sample!=empty_ind, ]
+concord_by_sample.df <- concord_by_sample.df[!(concord_by_sample.df$sample %in% empty_ind), ]
 nrow(concord_by_sample.df) # after removal
 
 # Remove inds if needed
@@ -98,8 +98,8 @@ if(isTRUE(remove_inds)){
   
   # Summary for excluded
   print("These are the individuals have been removed")
-  summary(concord_by_sample_excluded.df$dosage.r.squared)
-  sd(concord_by_sample_excluded.df$dosage.r.squared)
+  print(summary(concord_by_sample_excluded.df$dosage.r.squared))
+  print(sd(concord_by_sample_excluded.df$dosage.r.squared))
   
 }
 
@@ -121,7 +121,7 @@ hist_plot_rval <- concord_by_sample.df %>%
                   geom_histogram( bins=40, fill="darkgrey", color="#e9ecef") +
                   theme_bw()+
                   labs(x = "Per sample allelic dosage (r-value)") + 
-                  xlim(0.5, 1)
+                  xlim(0.4, 1)
   
 hist_plot_rval
 
@@ -133,8 +133,8 @@ sd(concord_by_sample.df$dosage.r)
 if(isTRUE(remove_inds)){
   
   print("These are the individuals have been removed")
-  summary(concord_by_sample_excluded.df$dosage.r)
-  sd(concord_by_sample_excluded.df$dosage.r)
+  print(summary(concord_by_sample_excluded.df$dosage.r))
+  print(sd(concord_by_sample_excluded.df$dosage.r))
 
 }
 
@@ -150,9 +150,9 @@ colnames(concord_table.df) <- gsub(pattern = "\\.\\.\\.\\.", replacement = "-", 
 concord_table.df[1:5,1:10]
 
 # Remove the indiv with all missing data, if there is one present, as identified above
-print(paste0("Also removing any indiv with all missing data, as above: ", empty_ind))
+print(paste0("Also removing any indiv with all missing data (if present), as above: ", empty_ind))
 nrow(concord_table.df)
-concord_table.df <- concord_table.df[concord_table.df$sample!=empty_ind, ] 
+concord_table.df <- concord_table.df[!(concord_table.df$sample %in% empty_ind), ] 
 nrow(concord_table.df)
 
 # Detect concordant colnames
@@ -240,8 +240,8 @@ if(isTRUE(remove_inds)){
   
     # Summarize excluded for completeness
     print("These are the values for the excluded individuals")
-    summary(concord_table_summary_excluded.df$prop_corr)
-    sd(concord_table_summary_excluded.df$prop_corr, na.rm = T)
+    print(summary(concord_table_summary_excluded.df$prop_corr))
+    print(sd(concord_table_summary_excluded.df$prop_corr, na.rm = T))
 
 }
 
@@ -296,7 +296,7 @@ if(file.exists(x = input_PSD.FN)){
     
   }else{
     
-    print("Too many loci to plot, don't crash the program.")
+    print("Too many loci to plot, not plotting percent corr by number typed to not crash the program.")
     
   }
   
@@ -336,28 +336,6 @@ if(file.exists(x = input_PSD.FN)){
   
 }
 
-
-# # Create multipanel plot
-# if(plot_type=="include_PSD"){
-#   
-#   final.figure <- ggarrange(hist_plot_prop_concord, hist_plot_rval
-#                             , scatter_missing_by_prop_concord, psd_plot
-#                             , labels = c("A", "B", "C", "D")
-#                             , ncol = 2, nrow = 2
-#   )
-#   
-#   pdf(file = paste0(input_folder, "multipanel_concord_w_PSD.pdf"), width = 8, height = 4.5)
-#   print(final.figure)
-#   dev.off()
-#   
-#   save.image(file = paste0(input_folder, "assess_bcftools_stats_output_for_plots.RData"))
-#   
-# }else{
-#   
-#   print("Not printing a full four-panel figure, saving out the concordant and dosage R-value")
-#   save.image(file = paste0(input_folder, "assess_bcftools_stats_output_for_plots.RData"))
-#   
-# }
 
 ##### End matter ####
 save.image(file = paste0(input_folder, "assess_bcftools_stats_output_for_plots.RData"))
