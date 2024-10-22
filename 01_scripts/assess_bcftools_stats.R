@@ -25,6 +25,9 @@ rm(current.path)
 #input_folder <- "05_compare_all_loci/ai2_vs_empirical/"
 input_folder <- "05_compare_all_loci/fi3_vs_empirical/"
 
+options(scipen=999999999)
+
+
 # Set include string to identify the individuals that should be in the summary 
 remove_inds    <- TRUE
 include_string <- "ASY2"
