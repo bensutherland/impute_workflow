@@ -21,20 +21,18 @@ setwd(current.path)
 rm(current.path)
 
 # Set user variables
-#input_folder <- "05_compare_all_loci/panel_vs_wgrs/" 
+input_folder <- "05_compare_all_loci/panel_vs_wgrs/" 
 #input_folder <- "05_compare_all_loci/ai2_vs_empirical/"
-input_folder <- "05_compare_all_loci/fi3_vs_empirical/"
+#input_folder <- "05_compare_all_loci/fi3_vs_empirical/"
 
-
-# Set include string to exclude any individuals that should not be in the summary 
-# ...for example, if individuals were used with HD data, and still are present here, exclude them
+# Set include string to identify the individuals that should be in the summary 
+remove_inds    <- FALSE
 include_string <- "ASY2"
-
-# TODO: optional - include list of samples to drop, if can't exclude using include_string
+# note: if working with imputation and individuals were used with HD data they should be excluded here
 
 # Plotting options
-plot_type <- "include_PSD" # Was per-site discordance calculated? 
-#plot_type <- "no_PSD"
+#plot_type <- "include_PSD" # Was per-site discordance calculated? Opts: "include_PSD" or "no_PSD"
+# deprecated
 
 # Build full filenames
 input_GCTs.FN <- paste0(input_folder, "GCTs.txt")
@@ -57,14 +55,30 @@ concord_by_sample.df$dosage.r.squared <- as.numeric(x = concord_by_sample.df$dos
 # Calculate per-sample r-value from r-squared value
 concord_by_sample.df$dosage.r <- sqrt(concord_by_sample.df$dosage.r.squared)
 
-# Only keep individuals with include_string, to exclude those that should not be in calculations
-# ..but first, retain excluded samples for inspecting
-concord_by_sample_excluded.df <-  concord_by_sample.df[grep(pattern = include_string, x = concord_by_sample.df$sample, invert = T), ]
-print(paste0("Number individuals removed from the concordance table: ", nrow(concord_by_sample_excluded.df)))
+# Remove cases with all missing data
+empty_ind <- concord_by_sample.df[rowSums(concord_by_sample.df[, grep(pattern = "matches", x = colnames(concord_by_sample.df))])==0, "sample"]
+print(paste0("Removing ", empty_ind, " due to no records present"))
+nrow(concord_by_sample.df) # before any removal
+concord_by_sample.df <- concord_by_sample.df[concord_by_sample.df$sample!=empty_ind, ]
+nrow(concord_by_sample.df) # after removal
 
-# Only keep those individuals to be included
-concord_by_sample.df <- concord_by_sample.df[grep(pattern = include_string, x = concord_by_sample.df$sample), ]
-paste0("Number of individuals being assessed after excluding drop inds: ", nrow(concord_by_sample.df))
+# Remove inds if needed
+if(isTRUE(remove_inds)){
+  
+  # Retain excluded samples for downstream inspection
+  concord_by_sample_excluded.df <-  concord_by_sample.df[grep(pattern = include_string, x = concord_by_sample.df$sample, invert = T), ]
+  print(paste0("Number individuals removed from the concordance table: ", nrow(concord_by_sample_excluded.df)))
+  
+  # Only keep those individuals to be included
+  concord_by_sample.df <- concord_by_sample.df[grep(pattern = include_string, x = concord_by_sample.df$sample), ]
+  paste0("Number of individuals being assessed after excluding drop inds: ", nrow(concord_by_sample.df))
+  
+  
+}else{
+  
+  print("Not excluding any individuals")
+  
+}
 
 # Plot histogram (r-squared)
 pdf(file = paste0(input_folder, "hist_concord_by_sample_rsquared.pdf"), width = 7.6, height = 4)
@@ -79,13 +93,17 @@ dev.off()
 summary(concord_by_sample.df$dosage.r.squared)
 sd(concord_by_sample.df$dosage.r.squared)
 
-# Summary for excluded
-print("These are the individuals have been removed")
-summary(concord_by_sample_excluded.df$dosage.r.squared)
-sd(concord_by_sample_excluded.df$dosage.r.squared)
+# Also provide summary for excluded samples
+if(isTRUE(remove_inds)){
+  
+  # Summary for excluded
+  print("These are the individuals have been removed")
+  summary(concord_by_sample_excluded.df$dosage.r.squared)
+  sd(concord_by_sample_excluded.df$dosage.r.squared)
+  
+}
 
-
-# # Samples with r2 < 0.5
+# # Optional: identify samples with r2 < 0.5
 # concord_by_sample.df[concord_by_sample.df$dosage.r.squared < 0.5, "sample"]
 
 # Plot histogram (r-value)
@@ -111,10 +129,14 @@ hist_plot_rval
 summary(concord_by_sample.df$dosage.r)
 sd(concord_by_sample.df$dosage.r)
 
-# Summary for excluded
-print("These are the individuals have been removed")
-summary(concord_by_sample_excluded.df$dosage.r)
-sd(concord_by_sample_excluded.df$dosage.r)
+# Also provide summary for excluded samples, if removing inds
+if(isTRUE(remove_inds)){
+  
+  print("These are the individuals have been removed")
+  summary(concord_by_sample_excluded.df$dosage.r)
+  sd(concord_by_sample_excluded.df$dosage.r)
+
+}
 
 
 #### 02. Percent concordant per sample (GCTs) ####
@@ -126,6 +148,12 @@ concord_table.df[1:5,1:5]
 colnames(concord_table.df) <- gsub(pattern = "^X\\.[0-9]\\.|^X\\.[0-9][0-9]\\.|^X\\.\\.", replacement = "", x = colnames(concord_table.df))
 colnames(concord_table.df) <- gsub(pattern = "\\.\\.\\.\\.", replacement = "-", x = colnames(concord_table.df))
 concord_table.df[1:5,1:10]
+
+# Remove the indiv with all missing data, if there is one present, as identified above
+print(paste0("Also removing any indiv with all missing data, as above: ", empty_ind))
+nrow(concord_table.df)
+concord_table.df <- concord_table.df[concord_table.df$sample!=empty_ind, ] 
+nrow(concord_table.df)
 
 # Detect concordant colnames
 columns <- colnames(concord_table.df)
@@ -166,12 +194,21 @@ table(rowSums(concord_table_summary.df[,c("concord_count", "missing_count", "dis
 # Calculate percentage of complete records that are concordant (exclude missing)
 concord_table_summary.df$prop_corr <- concord_table_summary.df$concord_count / (concord_table_summary.df$concord_count + concord_table_summary.df$discord_count)
 
-# Create separate df for the keep inds, or exclude inds
-concord_table_summary_excluded.df <- concord_table_summary.df[grep(pattern = include_string, x = concord_table_summary.df$indiv, invert = T), ]
-
-concord_table_summary.df <- concord_table_summary.df[grep(pattern = include_string, x = concord_table_summary.df$indiv), ]
-paste0("Number of individuals being assessed after excluding drop inds: ", nrow(concord_table_summary.df))
-
+# Remove inds if needed
+if(isTRUE(remove_inds)){
+  
+  # Create separate df for the keep inds, or exclude inds
+  concord_table_summary_excluded.df <- concord_table_summary.df[grep(pattern = include_string, x = concord_table_summary.df$indiv, invert = T), ]
+  
+  concord_table_summary.df <- concord_table_summary.df[grep(pattern = include_string, x = concord_table_summary.df$indiv), ]
+  paste0("Number of individuals being assessed after excluding drop inds: ", nrow(concord_table_summary.df))
+  
+  
+}else {
+  
+  print("Not excluding any inds")
+  
+}
 
 
 # Plot histogram of proportion correct (excluding missing)
@@ -198,13 +235,15 @@ hist_plot_prop_concord <- concord_table_summary.df %>%
 
 hist_plot_prop_concord
 
+# Also summarize excluded, if excluding
+if(isTRUE(remove_inds)){
+  
+    # Summarize excluded for completeness
+    print("These are the values for the excluded individuals")
+    summary(concord_table_summary_excluded.df$prop_corr)
+    sd(concord_table_summary_excluded.df$prop_corr, na.rm = T)
 
-# Summarize excluded for completeness
-print("These are the values for the excluded individuals")
-summary(concord_table_summary_excluded.df$prop_corr)
-sd(concord_table_summary_excluded.df$prop_corr, na.rm = T)
-
-
+}
 
 # Plot proportion correct by missing
 pdf(file = paste0(input_folder, "ppn_concord_by_missing_empirical_data.pdf")
@@ -282,6 +321,7 @@ if(file.exists(x = input_PSD.FN)){
                 geom_histogram( bins = 20, fill = "darkgrey", color = "#e9ecef") + 
                 theme_bw() + 
                 labs(x = "Per locus proportion concordant")
+                #xlim(0, 1.2) # Does not render well, loses last bar
   psd_plot
   
   pdf(file = paste0(input_folder, "per_locus_percent_corr_ggplot_hist.pdf"), width = 7.6, height = 4)
@@ -297,27 +337,31 @@ if(file.exists(x = input_PSD.FN)){
 }
 
 
-# Create multipanel plot
-if(plot_type=="include_PSD"){
-  
-  final.figure <- ggarrange(hist_plot_prop_concord, hist_plot_rval
-                            , scatter_missing_by_prop_concord, psd_plot
-                            , labels = c("A", "B", "C", "D")
-                            , ncol = 2, nrow = 2
-  )
-  
-  pdf(file = paste0(input_folder, "multipanel_concord_w_PSD.pdf"), width = 8, height = 4.5)
-  print(final.figure)
-  dev.off()
-  
-  save.image(file = paste0(input_folder, "assess_bcftools_stats_output_for_plots.RData"))
-  
-}else{
-  
-  print("Not printing a full four-panel figure, saving out the concordant and dosage R-value")
-  save.image(file = paste0(input_folder, "assess_bcftools_stats_output_for_plots.RData"))
-  
-}
+# # Create multipanel plot
+# if(plot_type=="include_PSD"){
+#   
+#   final.figure <- ggarrange(hist_plot_prop_concord, hist_plot_rval
+#                             , scatter_missing_by_prop_concord, psd_plot
+#                             , labels = c("A", "B", "C", "D")
+#                             , ncol = 2, nrow = 2
+#   )
+#   
+#   pdf(file = paste0(input_folder, "multipanel_concord_w_PSD.pdf"), width = 8, height = 4.5)
+#   print(final.figure)
+#   dev.off()
+#   
+#   save.image(file = paste0(input_folder, "assess_bcftools_stats_output_for_plots.RData"))
+#   
+# }else{
+#   
+#   print("Not printing a full four-panel figure, saving out the concordant and dosage R-value")
+#   save.image(file = paste0(input_folder, "assess_bcftools_stats_output_for_plots.RData"))
+#   
+# }
 
+##### End matter ####
+save.image(file = paste0(input_folder, "assess_bcftools_stats_output_for_plots.RData"))
+
+# Next, can plot using script '01_scripts/plot_impute_vs_empirical_multipanel.R'
 
 # End of assessment of bcftools stats output
