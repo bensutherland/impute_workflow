@@ -385,5 +385,12 @@ bcftools query -f '%CHROM %POS %MAF\n' 04_impute_all_loci/all_inds_wgrs_and_pane
 Plot with:    
 `plot_psd_across_chr.R`    
 
+If want to filter a BCF file and output only loci within a certain MAF range:    
+```
+bcftools view -i 'MAF>0 & MAF<0.05' eval_maf/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_offspring_only_rename_w_tags.bcf -Ob -o eval_maf/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_offspring_only_rename_w_tags_maf_0.001-0.5.bcf
+
+```
+
+
 
 
