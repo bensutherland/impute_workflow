@@ -23,7 +23,7 @@ rm(current.path)
 # sessionInfo()
 
 # Set variables
-input.FN             <- "04_impute/all_inds_wgrs_and_panel_biallele_no_MERR_ai2.txt"
+input.FN             <- "04_impute/all_inds_wgrs_and_panel_biallele_ai2.txt"
 chr_indicator.string <- "NC_047"
 output_folder        <- "04_impute/"
 
