@@ -1,5 +1,6 @@
 #!/bin/bash
 # Prepare FImpute3 file, must already have run 01_scripts/ai2_to_fimpute3.R
+# note: ** no longer used **, replaced by 01_scripts/prep_fi3_indiv_chr.sh
 # B. Sutherland (2024-08-27)
 
 # Set user variables
