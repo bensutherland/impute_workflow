@@ -252,7 +252,7 @@ bcftools view --regions-file 05_compare/ai2_imputed_regions.txt 04_impute/all_in
 ./01_scripts/ai2_to_VCF.R
 
 # Convert the output to BCF format
-bcftools view 04_impute/<your_output_file>.vcf.gz -Ob -o 04_impute/all_inds_wgrs_and_panel_biallele_only_no_MERR_ai2_imputed.bcf
+bcftools view 04_impute/<your_output_file>.vcf.gz -Ob -o 04_impute/<your_output_file>_ai2_imputed.bcf
 
 # Index the above BCF file
 ```
@@ -262,7 +262,7 @@ Jump to [Evaluate concordance](#07-evaluate-imputation).
 
 
 #### Imputation with FImpute3: ####   
-The FImpute3 workflow will start from the pre-imputed, pre-separated AI2 file generated from the BCF file above.     
+The FImpute3 workflow will start from the pre-imputed, pre-chromosome separated AI2 file generated from the BCF file above.     
  
 Further prepare data:    
 ```
@@ -306,7 +306,7 @@ bcftools view --regions-file 05_compare/fi3_imputed_regions.txt 04_impute/all_in
 # ...output will be the input vcf (w/ regions) identifier, with "_fi3|_ai2_imputed.vcf.gz" 
 
 # Convert the output to BCF format
-bcftools view 04_impute/<your_output_file>.vcf.gz -Ob -o 04_impute/all_inds_wgrs_and_panel_biallele_only_no_MERR_fi3_imputed.bcf
+bcftools view 04_impute/<your_output_file>.vcf.gz -Ob -o 04_impute/all_inds_wgrs_and_panel_biallele_only_fi3_imputed.bcf
 
 # Index the above BCF file
 ```
@@ -316,6 +316,8 @@ Jump to [Evaluate concordance](#07-evaluate-imputation).
 
 ### 07. Evaluate imputation ###
 This section will describe how to compare BCF/VCF files.      
+
+See [here](20_docs/README_prep_empirical.md) for details on how to obtain a wgrs empirical file.     
 
 Prepare data for comparison:          
 note: use a name below that fits your comparison type, for example `ai2_vs_empirical`, `fi3_vs_empirical`, `wgrs_vs_panel`      
@@ -327,8 +329,8 @@ mkdir 05_compare/ai2_vs_empirical
 
 # Copy in both files, for example: 
 # a prepared file that has all wgrs genotypes (samples renamed)
-# 04_impute/all_inds_wgrs_and_panel_biallele_only_no_MERR_ai2_imputed.bcf
-# 05_compare/panel_vs_wgrs/parents_and_offspring_wgrs_renamed.bcf
+# 04_impute/all_inds_wgrs_and_panel_biallele_only_ai2_imputed.bcf (imputed data)
+# 02_input_data/offspring_hd/*_offspring_only_rename.bcf (empirical data)
 
 # Prepare an isec folder
 mkdir 05_compare/ai2_vs_empirical/isec/
