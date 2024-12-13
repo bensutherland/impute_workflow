@@ -21,8 +21,8 @@ rm(current.path)
 
 # Set variables
 ai2_input.FN     <- "04_impute/all_inds_wgrs_and_panel_biallele_ai2.txt" 
-chr_string <- "NC_0475"
-pedigree.FN <- "04_impute/pedigree.csv"
+chr_string       <- "NC_0475"
+pedigree.FN      <- "04_impute/pedigree.csv"
 
 # Load data
 # Pedigree
@@ -67,6 +67,9 @@ Pos <- gsub(pattern = ".*\ ", replacement = "", x = ai2.df$mname)
 map.df <- cbind(SNP, Chr, Pos)
 map.df <- as.data.frame(map.df)
 head(map.df)
+
+# NOTE: here Chr does not correspond to the actual chromosome names of the species, it just keeps
+#  in the same order as the NCBI identifiers for the chromosomes
 
 # Make individual maps per chr
 chunk <- NULL; map.FN <- NULL
@@ -126,4 +129,4 @@ head(chip.df)
 write.table(x = chip.df, file = "04_impute/fimpute/chip.txt", sep = " ", quote = F, row.names = F)
 
 
-# All component parts are prepared, now go to terminal and run 01_scripts/prep_fi3.sh
+# All component parts are prepared, now go to terminal and run 01_scripts/prep_fi3_indiv_chr.sh
