@@ -3,6 +3,11 @@
 # note: the INPUT_AI2 variable is the post-imputation file after it has been rejoined
 
 # Set user variables
+# AI2 settings
+#INPUT_FOLDER="05_compare"
+#INPUT_AI2="all_chr_combined.txt"
+
+# FI3 settings
 INPUT_FOLDER="04_impute/fimpute"
 INPUT_AI2="fi3_loci_by_inds_all_imputed_chr.txt"
 
