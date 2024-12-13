@@ -9,7 +9,7 @@
 # Set user variables
 INPUT_FOLDER="05_compare/"
 INPUT_PATTERN=".genotypes_transposed_to_combine.txt"
-ORGN_AI2_FILE="04_impute/all_inds_wgrs_and_panel_biallele_no_MERR_ai2.txt"
+ORGN_AI2_FILE="04_impute/all_inds_wgrs_and_panel_biallele_ai2.txt"
 
 # Combine all imputed datafiles 
 cat "$INPUT_FOLDER"/*"$INPUT_PATTERN" > "$INPUT_FOLDER"/all_chr_combined_temp.txt

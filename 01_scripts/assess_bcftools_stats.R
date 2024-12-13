@@ -21,9 +21,9 @@ setwd(current.path)
 rm(current.path)
 
 # Set user variables
-#input_folder <- "05_compare_all_loci/panel_vs_wgrs/" 
-#input_folder <- "05_compare_all_loci/ai2_vs_empirical/"
-input_folder <- "05_compare_all_loci/fi3_vs_empirical/"
+#input_folder <- "05_compare/panel_vs_wgrs/" 
+#input_folder <- "05_compare/ai2_vs_empirical/"
+input_folder <- "05_compare/fi3_vs_empirical/"
 
 options(scipen=999999999)
 
