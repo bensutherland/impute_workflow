@@ -21,7 +21,7 @@ rm(current.path)
 
 # Set variables
 trios.FN     <- "06_screen_loci/trios.txt"
-present_samples.FN <- "06_screen_loci/present_HD_samples.txt"
+present_samples.FN <- "06_screen_loci/wgrs_present_offspring.txt"
 
 
 trios.df <- read.table(file = trios.FN, sep = ",")
@@ -31,5 +31,6 @@ present_samples <- read.table(file = present_samples.FN, header = F)
 head(present_samples, n = 10)
 
 trios.df <- trios.df[trios.df$V3 %in% present_samples$V1, ]
+nrow(trios.df)
 write.table(x = trios.df, file = "06_screen_loci/trios_limited.txt", col.names = F, row.names = F, sep = ","
             , quote = F)
