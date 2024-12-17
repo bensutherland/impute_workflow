@@ -1,8 +1,11 @@
 ## GWAS analysis with imputed data ##
-Use the output of the imputation software, converted to ai2 format as input for this process.    
-Will also need a phenotype file.    
+The output of the imputation software can be used as an input to a GEMMA analysis. This is supported for FImpute3 (FI3) and AlphaImpute2 (AI2), although both are expected to be in AlphaImpute2 format (see main pipeline).       
+FI3 input: `04_impute/fimpute/fi3_loci_by_inds_all_imputed_chr.txt`     
+AI2 input: `05_compare/all_chr_combined.txt`      
 
-First, use the following script to prepare the files for GEMMA, including the phenotype file, the covariate file, and the genotype file:      
+Will also need a phenotype file (#TODO, add link) in `00_archive`.    
+
+Use the following script to prepare the files for GEMMA, including the phenotype file, the covariate file, and the genotype file:      
 `01_scripts/imputed_ai2_to_gemma.R`       
 
 Second, run the following commands in terminal:     

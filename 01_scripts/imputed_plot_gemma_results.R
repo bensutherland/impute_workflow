@@ -28,7 +28,7 @@ rm(current.path)
 
 # User set variables
 #gemma_output.FN       <- "07_GWAS/ai2_imputed_survival_state_pheno/output/gwas_all_fam_covariate.assoc.txt"
-gemma_output.FN       <- "07_GWAS/fi3_imputed_survival_state_pheno/output/gwas_all_fam_covariate.assoc.txt"
+gemma_output.FN       <- "07_GWAS/output/gwas_all_fam_covariate.assoc.txt"
 phenotype_of_interest <- "survival_state" # DPE or survival_state
 highlight_snps.FN <- "07_GWAS/denovo_snp_ids.txt"
 caution_zones.FN <- "chr_locs_w_multimapper_loci.txt"  # This is if you are using multimappers to plot
@@ -108,7 +108,7 @@ highlight.vec <- highlight.vec[highlight.vec %in% gemma_gwas$rs]
 length(highlight.vec)
 
 
-pdf(file = paste0("07_GWAS/Manhattan_plot_", phenotype_of_interest, "_annotated.pdf"), width = 10.8, height = 5.2)
+pdf(file = paste0(output.FN, "/Manhattan_plot_", phenotype_of_interest, "_annotated.pdf"), width = 10.8, height = 5.2)
 par(mfrow = c(1,1), mar = c(5,4,4,2) +0.1, mgp = c(3,1,0))
 fastman(m = gemma_gwas, chr = "chr", bp = "pos", p = "p_wald", snp = "rs"
         , genomewideline = -log10(0.05/nrow(gemma_gwas))
