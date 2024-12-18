@@ -21,15 +21,15 @@ setwd(current.path)
 rm(current.path)
 
 # Set user variables
-#input_folder <- "05_compare/panel_vs_wgrs/" 
+input_folder <- "05_compare/panel_vs_wgrs/" 
 #input_folder <- "05_compare/ai2_vs_empirical/"
-input_folder <- "05_compare/fi3_vs_empirical/"
+#input_folder <- "05_compare/fi3_vs_empirical/"
 
 options(scipen=999999999)
 
 
 # Set include string to identify the individuals that should be in the summary 
-remove_inds    <- TRUE
+remove_inds    <- FALSE
 include_string <- "ASY2"
 # note: if working with imputation and individuals were used with HD data they should be excluded here
 
@@ -123,8 +123,8 @@ hist_plot_rval <- concord_by_sample.df %>%
                   ggplot( aes(x=dosage.r)) +
                   geom_histogram( bins=40, fill="darkgrey", color="#e9ecef") +
                   theme_bw()+
-                  labs(x = "Per sample allelic dosage (r-value)") + 
-                  xlim(0.4, 1)
+                  labs(x = "Per sample allelic dosage (r-value)")  
+                  #xlim(0.4, 1)
   
 hist_plot_rval
 
@@ -233,8 +233,8 @@ hist_plot_prop_concord <- concord_table_summary.df %>%
   ggplot( aes(x=prop_corr)) +
   geom_histogram( bins=40, fill="darkgrey", color="#e9ecef") +
   theme_bw()+
-  labs(x = "Per sample proportion concordant") + 
-  xlim(0.5, 1)
+  labs(x = "Per sample proportion concordant") 
+  #xlim(0.5, 1)
 
 hist_plot_prop_concord
 
@@ -310,13 +310,14 @@ if(file.exists(x = input_PSD.FN)){
   write.table(x = bad_loci, file = paste0(input_folder, "bad_loci.txt"), col.names = F, row.names = F)
   
   # Summary
-  summary(psd_table.df$percent.corr)
-  sd(psd_table.df$percent.corr, na.rm = T)
+  print(summary(psd_table.df$percent.corr))
+  print(sd(psd_table.df$percent.corr, na.rm = T))
   
+  print("Reporting results for only loci with greater than 50% concordant")
   psd_table_clean.df <- psd_table.df[psd_table.df$percent.corr >= 0.5, ]
   nrow(psd_table_clean.df)
-  summary(psd_table_clean.df$percent.corr)
-  sd(psd_table_clean.df$percent.corr, na.rm = T)
+  print(summary(psd_table_clean.df$percent.corr))
+  print(sd(psd_table_clean.df$percent.corr, na.rm = T))
   
   # ggplot option
   psd_plot <- psd_table.df %>% 
