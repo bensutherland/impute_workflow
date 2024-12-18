@@ -14,6 +14,7 @@ Note: no duplicate individuals (i.e., tech replicates) should be present.
 
 #### Special Functions ####
 - Screen for Mendelian incompatibilities in panel data [here](20_docs/README_MI.md)     
+- Compare between platform concordance [here](20_docs/README_compare_shared_loci_HD_LD.md)    
 
 
 ### 01. Prepare input data ### 
@@ -318,6 +319,7 @@ Jump to [Evaluate concordance](#07-evaluate-imputation).
 This section will describe how to compare BCF/VCF files.      
 
 See [here](20_docs/README_prep_empirical.md) for details on how to obtain a wgrs empirical file.     
+See [here](20_docs/README_compare_shared_loci_HD_LD.md) for details on how to do a between platform comparison (low density vs. high density shared loci).     
 
 Prepare data for comparison:          
 note: use a name below that fits your comparison type, for example `ai2_vs_empirical`, `fi3_vs_empirical`, `wgrs_vs_panel`      
