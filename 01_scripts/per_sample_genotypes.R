@@ -19,7 +19,7 @@ library("dplyr")
 library("ggplot2")
 library("ggpubr")
 
-# Set working directory to the ms_scallop_popgen repo
+# Set working directory
 current.path <- dirname(rstudioapi::getSourceEditorContext()$path)
 current.path <- gsub(pattern = "\\/01_scripts", replacement = "", x = current.path)
 setwd(current.path)
@@ -31,13 +31,16 @@ options(scipen = 99999999)
 
 #### 01. Set up ####
 # Set filenames
-#vcf.FN <- "tally_genos_per_sample/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_parents_only_rename.vcf.gz" # parents, empirical
-#vcf.FN <- "tally_genos_per_sample/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_offspring_only_rename.vcf.gz" # offspring, empirical
-#vcf.FN <- "04_impute_all_loci/all_inds_wgrs_and_panel_biallele_only_fi3_imputed.vcf.gz" # imputed, Fi3
-vcf.FN <- "tally_genos_per_sample/all_inds_imputed_by_ai2_shared.vcf.gz" # imputed, Fi3
+vcf_empirical.FN   <- "06_screen_loci/parents_and_offspring_wgrs.vcf.gz" # all inds, empirical
+vcf_imputed_ai2.FN <- "06_screen_loci/all_inds_wgrs_and_panel_biallele_only_ai2_imputed.vcf.gz" # all inds, imputed ai2
+vcf_imputed_fi3.FN <- "06_screen_loci/all_inds_wgrs_and_panel_biallele_only_fi3_imputed.vcf.gz" # all inds, imputed fi3
+
+# Select from the above three items
+vcf.FN <- vcf_empirical.FN
 
 # Read in data
 vcf <- read.vcfR(file = vcf.FN)
+vcf
 
 # Extract genotypes
 gt.df <- extract.gt(x = vcf, element = "GT") # note: do not use the 'as.numeric' method because there are more than two alleles in the VCF and this causes issues
@@ -110,7 +113,7 @@ p
 # Save plot
 output_base.FN <- gsub(pattern = ".*\\/", replacement = "", vcf.FN)
 output_base.FN <- gsub(pattern = "\\.vcf\\.gz", replacement = "", output_base.FN)
-pdf(file = paste0("tally_genos_per_sample/", output_base.FN, "_barplot_genos.pdf"), width = 9, height = 3.5)
+pdf(file = paste0("06_screen_loci/", output_base.FN, "_barplot_genos.pdf"), width = 9, height = 3.5)
 print(p)
 dev.off()
 
@@ -148,53 +151,43 @@ wide.df <- wide.df[,c("indiv", "count.homo_ref", "count.het", "count.homo_alt", 
 # Checking
 rowSums(wide.df[,2:ncol(wide.df)], na.rm = T)
 
-write.table(x = wide.df, file = paste0("tally_genos_per_sample/", output_base.FN, "_tallies.txt"), quote = F, sep = "\t", row.names = F)
+write.table(x = wide.df, file = paste0("06_screen_loci/", output_base.FN, "_tallies.txt"), quote = F, sep = "\t", row.names = F)
 
 # Save per sample genotype count plot as object
-save(variants_per_indiv.plot, file = paste0("tally_genos_per_sample/", output_base.FN, "_output.Rdata"))
+save(variants_per_indiv.plot, file = paste0("06_screen_loci/", output_base.FN, "_output.Rdata"))
 
 
-#### DOWNSTREAM COULD MULTI-PANEL PLOT ####
+#### DOWNSTREAM MULTI-PANEL PLOT ####
 # To run the following multipanel plotting processes, you first need to run the above and generate Rdata for
-# (1) parents empirical; (2) offspring empirical; (3) all inds, imputed by ai2; (4) all inds, imputed by fi3 
+# (1) all inds, empirical; (3) all inds, imputed by ai2; (4) all inds, imputed by fi3 
 
-# Empirical multi-panel plot
-list.files(path = "tally_genos_per_sample/", pattern = ".Rdata")
-load(file = "tally_genos_per_sample/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_parents_only_rename_output.Rdata")
-parents_empirical.plot <- variants_per_indiv.plot
-load(file = "tally_genos_per_sample/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_offspring_only_rename_output.Rdata")
-offspring_empirical.plot <- variants_per_indiv.plot
+list.files(path = "06_screen_loci/", pattern = ".Rdata")
 
-empirical_data_multipanel.plot <- ggarrange(parents_empirical.plot, offspring_empirical.plot, ncol = 1, nrow = 2
-                                            , labels = c("A", "B")
-                                            )
-empirical_data_multipanel.plot
+# Empirical data
+load(file = "06_screen_loci/parents_and_offspring_wgrs_output.Rdata")
+empirical.plot <- variants_per_indiv.plot
+empirical.plot <- empirical.plot + theme(legend.position="none")
 
-pdf(file = "tally_genos_per_sample/empirical_multipanel_geno_tally_per_sample.pdf", width = 20, height = 6)
-print(empirical_data_multipanel.plot)
-dev.off()
-
-
-# Imputed multi-panel plot
-list.files(path = "tally_genos_per_sample/", pattern = ".Rdata")
-load(file = "tally_genos_per_sample/all_inds_imputed_by_ai2_shared_output.Rdata") # ai2
+# Imputed data
+load(file = "06_screen_loci/all_inds_wgrs_and_panel_biallele_only_ai2_imputed_output.Rdata")
 all_inds_imputed_ai2.plot <- variants_per_indiv.plot
-load(file = "tally_genos_per_sample/all_inds_wgrs_and_panel_biallele_only_fi3_imputed_output.Rdata") # fi3
+all_inds_imputed_ai2.plot <- all_inds_imputed_ai2.plot + theme(legend.position="none")
+
+load(file = "06_screen_loci/all_inds_wgrs_and_panel_biallele_only_fi3_imputed_output.Rdata")
 all_inds_imputed_fi3.plot <- variants_per_indiv.plot
+all_inds_imputed_fi3.plot <- all_inds_imputed_fi3.plot + theme(legend.position="none")
 
-imputed_data_multipanel.plot <- ggarrange(all_inds_imputed_ai2.plot, all_inds_imputed_fi3.plot, ncol = 1, nrow = 2
-                                            , labels = c("A", "B")
+multipanel.plot <- ggarrange(empirical.plot
+                                          , all_inds_imputed_ai2.plot
+                                          , all_inds_imputed_fi3.plot
+                                          , ncol = 1, nrow = 3
+                                          , labels = c("A", "B", "C")
 )
-imputed_data_multipanel.plot
+multipanel.plot
 
-pdf(file = "tally_genos_per_sample/imputed_multipanel_geno_tally_per_sample.pdf", width = 20, height = 6)
-print(imputed_data_multipanel.plot)
+
+pdf(file = "06_screen_loci/multipanel_geno_tally_per_sample.pdf", width = 20, height = 6)
+print(multipanel.plot)
 dev.off()
-
-
-
-
-
 
 # Complete 
-
