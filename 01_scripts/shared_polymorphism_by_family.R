@@ -32,12 +32,15 @@ options(scipen = 99999999)
 
 #### 01. Set up ####
 # Set filenames
-parent_vcf.FN    <- "tally_genos_per_sample/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_parents_only_rename.vcf.gz" # parents, empirical
-offspring_vcf.FN <- "tally_genos_per_sample/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_offspring_only_rename.vcf.gz" # offspring, empirical
+parent_vcf.FN    <- "06_screen_loci/parents_only_rename.vcf.gz" # parents, empirical
+offspring_vcf.FN <- "06_screen_loci/offspring_only_rename.vcf.gz" # offspring, empirical
 
 # Read in data
 parent_vcf    <- read.vcfR(file = parent_vcf.FN)
+parent_vcf
 offspring_vcf <- read.vcfR(file = offspring_vcf.FN)
+offspring_vcf
+
 
 #### 02. Determine which loci are fully typed in each parental pairing ####
 # Extract genotypes
@@ -80,7 +83,7 @@ F117_parents.df <- F117_parents.df[F117_parents.df$num.missing == 0, ] # keep on
 dim(F117_parents.df)  # how many remain? 
 
 
-# Identify per family which loci are fully typed (no NAs)
+# Obtain vectors of loci names that are fully typed (no missing) per family
 F114_parents_loci_no_missing.vec <- rownames(F114_parents.df)
 F114_parents_loci_no_missing.vec <- gsub(pattern = "\\.", replacement = "_", x = F114_parents_loci_no_missing.vec)
 length(F114_parents_loci_no_missing.vec)
@@ -302,43 +305,50 @@ F114_offspr_poly_parents_poly.plot <- F114_offspring_poly_parents_poly.af %>%
   ggplot(aes(x = alf2)) + 
   geom_histogram( bins = 40, fill = "darkgrey", color = "#e9ecef") +
   theme_bw() + 
-  labs(x = "Alt. allele freq.", y = NULL)
+  labs(x = "Alt. allele freq.", y = NULL) +
+  xlim(0,1)
 
 F115_offspr_poly_parents_mono.plot <- F115_offspring_poly_parents_mono.af %>%
   ggplot(aes(x = alf2)) + 
   geom_histogram( bins = 40, fill = "darkgrey", color = "#e9ecef") +
   theme_bw() + 
-  labs(x = "Alt. allele freq.", y = NULL)
+  labs(x = "Alt. allele freq.", y = NULL) +
+  xlim(0,1)
 
 F115_offspr_poly_parents_poly.plot <- F115_offspring_poly_parents_poly.af %>%
   ggplot(aes(x = alf2)) + 
   geom_histogram( bins = 40, fill = "darkgrey", color = "#e9ecef") +
   theme_bw() + 
-  labs(x = "Alt. allele freq.", y = NULL)
+  labs(x = "Alt. allele freq.", y = NULL) +
+  xlim(0,1)
 
 F116_offspr_poly_parents_mono.plot <- F116_offspring_poly_parents_mono.af %>%
   ggplot(aes(x = alf2)) + 
   geom_histogram( bins = 40, fill = "darkgrey", color = "#e9ecef") +
   theme_bw() + 
-  labs(x = "Alt. allele freq.", y = NULL)
+  labs(x = "Alt. allele freq.", y = NULL) +
+  xlim(0,1)
 
 F116_offspr_poly_parents_poly.plot <- F116_offspring_poly_parents_poly.af %>%
   ggplot(aes(x = alf2)) + 
   geom_histogram( bins = 40, fill = "darkgrey", color = "#e9ecef") +
   theme_bw() + 
-  labs(x = "Alt. allele freq.", y = NULL)
+  labs(x = "Alt. allele freq.", y = NULL) +
+  xlim(0,1)
 
 F117_offspr_poly_parents_mono.plot <- F117_offspring_poly_parents_mono.af %>%
   ggplot(aes(x = alf2)) + 
   geom_histogram( bins = 40, fill = "darkgrey", color = "#e9ecef") +
   theme_bw() + 
-  labs(x = "Alt. allele freq.", y = NULL)
+  labs(x = "Alt. allele freq.", y = NULL) +
+  xlim(0,1)
 
 F117_offspr_poly_parents_poly.plot <- F117_offspring_poly_parents_poly.af %>%
   ggplot(aes(x = alf2)) + 
   geom_histogram( bins = 40, fill = "darkgrey", color = "#e9ecef") +
   theme_bw() + 
-  labs(x = "Alt. allele freq.", y = NULL)
+  labs(x = "Alt. allele freq.", y = NULL) +
+  xlim(0,1)
 
 # Multipanel plot
 final.figure <- ggarrange(
@@ -350,7 +360,7 @@ final.figure <- ggarrange(
 
 final.figure
 
-pdf(file = "tally_genos_per_sample/multipanel_AF_for_poly_off_and_par_and_poly_off_mono_par.pdf"
+pdf(file = "06_screen_loci/multipanel_AF_for_poly_off_and_par_and_poly_off_mono_par.pdf"
     , width = 9.6, height = 5
     )
 print(final.figure)
@@ -366,157 +376,135 @@ rm(parent_gt.df)
 gc()
 #save.image(file = "tally_genos_per_sample/shared_polymorphs_up_to_indiv_offspring_analysis.RData")
 
-
-#### 05. Offspring analysis, per individual ####
-# Make a list of the different offspring datasets
-# note: these have already been subset to only include loci that have *no missing data* in parents
-# Offspring data
-offspring.list <- list()
-offspring.list[["F114_offspring"]] <- F114_offspring.gl
-offspring.list[["F115_offspring"]] <- F115_offspring.gl
-offspring.list[["F116_offspring"]] <- F116_offspring.gl
-offspring.list[["F117_offspring"]] <- F117_offspring.gl
-
-# Parent data
-parents.list <- list()
-parents.list[["F114_parents_nomissing"]] <- F114_parents_nomissing.gl
-parents.list[["F115_parents_nomissing"]] <- F115_parents_nomissing.gl
-parents.list[["F116_parents_nomissing"]] <- F116_parents_nomissing.gl
-parents.list[["F117_parents_nomissing"]] <- F117_parents_nomissing.gl
-
-# Vectors of monomorphs in parental pairs
-parents_monomorphs.list <- list()
-parents_monomorphs.list[["F114_parents_monomorphs"]] <- F114_parents_monomorphs.vec
-parents_monomorphs.list[["F115_parents_monomorphs"]] <- F115_parents_monomorphs.vec
-parents_monomorphs.list[["F116_parents_monomorphs"]] <- F116_parents_monomorphs.vec
-parents_monomorphs.list[["F117_parents_monomorphs"]] <- F117_parents_monomorphs.vec
-
-# Set names of fams
-families <- c("F114", "F115", "F116", "F117")
+# End
 
 
-# Set nulls
-foi <- NULL; indivs_for_family <- NULL
-offspring.oi.gl <- NULL; parent.oi.gl <- NULL; ind.oi.gl <- NULL; ind.oi_no_missing.gl <- NULL; ind.oi_no_missing_no_mono.gl <- NULL
-indiv <- NULL; indiv_polymorph_loci.vec <- NULL; parents_monomorphs.vec <- NULL; offspr_poly_parents_mono.vec <- NULL
-per_fam_info.df <- NULL
-per_fam_info.list <- list()
-parent.oi.gi <- NULL
+### Below is incomplete development, would need additional work ###
 
-# Loop over families
-for(i in 1:length(families)){
-  
-  # Select family of interest
-  foi <- families[i]
-  
-  # Select parent dataset for this family
-  parent.oi.gl <- parents.list[[grep(pattern = foi, x = names(parents.list))]]
-  print(paste0("Parents for ", foi, ":"))
-  print(indNames(parent.oi.gl))
-  parent.oi.gi <- gl2gi(parent.oi.gl) # convert to gi
-  pop(parent.oi.gi) <- rep(x = paste0(foi, "_parents"), times = nInd(parent.oi.gi))
-  
-  # Select offspring dataset for this family
-  offspring.oi.gl <- offspring.list[[grep(pattern = foi, x = names(offspring.list))]]
-  print("Offspring: ")
-  print(indNames(offspring.oi.gl))
-  offspring.oi.gi <- gl2gi(offspring.oi.gl)
-  pop(offspring.oi.gi) <- rep(x = paste0(foi, "_offspring"), times = nInd(offspring.oi.gi))
-  
-  # Empty the per_fam_info df and prepare it
-  per_fam_info.df <- data.frame(indiv=character(), 
-                                num.poly=numeric(), 
-                                num.mono=numeric(),
-                                num.missing=numeric(),
-                                num.poly.offspr.mono.parents=numeric(), 
-                                stringsAsFactors=FALSE
-                                ) 
-  
-  
-  for(o in 1:nInd(offspring.oi.gi)){
-    
-    # Subset to one offspring
-    ind.oi.gi <- offspring.oi.gi[o, ]
-    
-    # Retain the indiv name
-    per_fam_info.df[o,"indiv"] <- indNames(ind.oi.gi)
-    
-    # Combine the trio
-    trio.gl <- repool(ind.oi.gi, parent.oi.gi)
-    
-    pa <- private_alleles(gid = trio.gl)
-    
-    # Remove any missing loci from the indiv gl
-    ind.oi_no_missing.gl <- gl.filter.allna(ind.oi.gl)
-    
-    # Combine with parent data
-    
-    
-    
-    # Convert to genind
-    ind.oi.gi <- gl2gi(x = ind.oi.gl)
-    pop(in.oi.gi) <- "offspring"
-    
-    # Combine 
-    # combine above with parents, set pop, genind, determine private alleles
-    
-    
-    
-    
-    # Remove monomorphic
-    ind.oi_no_missing_no_mono.gl <- gl.filter.monomorphs(x = ind.oi_no_missing.gl, verbose = NULL)
-    # FAILS WITH SINGLE IND
-    
-    # Identify the missing loci
-    indiv_missing_loci.vec <- setdiff(x = locNames(ind.oi.gl), y = locNames(ind.oi_no_missing.gl))
-    
-    # Identify remaining loci as polymorphic
-    indiv_polymorph_loci.vec <- locNames(ind.oi_no_missing_no_mono.gl)
-    
-    # Identify the removed loci as monomorphic 
-    indiv_monomorph_loci.vec <- setdiff(x = locNames(ind.oi_no_missing.gl), y = locNames(ind.oi_no_missing_no_mono.gl))
-    
-    # Record how many polymorphic, monomorphic, and missing loci total for this indiv
-    per_fam_info.df[i,"num.poly"]    <- length(indiv_polymorph_loci.vec)
-    per_fam_info.df[i,"num.mono"]    <- length(indiv_monomorph_loci.vec)
-    per_fam_info.df[i,"num.missing"] <- length(indiv_missing_loci.vec)
-    
-    # How many of the polymorphic loci were monomorphic in parents? 
-    parents_monomorphs.vec <- parents_monomorphs.list[[grep(pattern = foi, x = names(parents_monomorphs.list))]]
-    offspr_poly_parents_mono.vec <- setdiff(x = indiv_polymorph_loci.vec, y = parents_monomorphs.vec)
-    per_fam_info.df[i,"num.poly.offspr.mono.parents"] <- length(offspr_poly_parents_mono.vec)
-    
-    # Retain info in list 
-    per_fam_info.list[[foi]] <- per_fam_info.df
-    
-  }
-  
-}
-
-# Note: the above will miss alternate homozygotes, which could be captured by parent x offspring gid and private_alleles of poppr
-
-
-
-# #### OLD CODE ####
-# # Subset to individual
-# test <- parent_vcf[j = "55-41F"]
+# #### 05. Offspring analysis, per individual ####
+# # Make a list of the different offspring datasets
+# # note: these have already been subset to only include loci that have *no missing data* in parents
+# # Offspring data
+# offspring.list <- list()
+# offspring.list[["F114_offspring"]] <- F114_offspring.gl
+# offspring.list[["F115_offspring"]] <- F115_offspring.gl
+# offspring.list[["F116_offspring"]] <- F116_offspring.gl
+# offspring.list[["F117_offspring"]] <- F117_offspring.gl
+# 
+# # Parent data
+# parents.list <- list()
+# parents.list[["F114_parents_nomissing"]] <- F114_parents_nomissing.gl
+# parents.list[["F115_parents_nomissing"]] <- F115_parents_nomissing.gl
+# parents.list[["F116_parents_nomissing"]] <- F116_parents_nomissing.gl
+# parents.list[["F117_parents_nomissing"]] <- F117_parents_nomissing.gl
+# 
+# # Vectors of monomorphs in parental pairs
+# parents_monomorphs.list <- list()
+# parents_monomorphs.list[["F114_parents_monomorphs"]] <- F114_parents_monomorphs.vec
+# parents_monomorphs.list[["F115_parents_monomorphs"]] <- F115_parents_monomorphs.vec
+# parents_monomorphs.list[["F116_parents_monomorphs"]] <- F116_parents_monomorphs.vec
+# parents_monomorphs.list[["F117_parents_monomorphs"]] <- F117_parents_monomorphs.vec
+# 
+# # Set names of fams
+# families <- c("F114", "F115", "F116", "F117")
 # 
 # 
+# # Set nulls
+# foi <- NULL; indivs_for_family <- NULL
+# offspring.oi.gl <- NULL; parent.oi.gl <- NULL; ind.oi.gl <- NULL; ind.oi_no_missing.gl <- NULL; ind.oi_no_missing_no_mono.gl <- NULL
+# indiv <- NULL; indiv_polymorph_loci.vec <- NULL; parents_monomorphs.vec <- NULL; offspr_poly_parents_mono.vec <- NULL
+# per_fam_info.df <- NULL
+# per_fam_info.list <- list()
+# parent.oi.gi <- NULL
 # 
+# # Loop over families
+# for(i in 1:length(families)){
+#   
+#   # Select family of interest
+#   foi <- families[i]
+#   
+#   # Select parent dataset for this family
+#   parent.oi.gl <- parents.list[[grep(pattern = foi, x = names(parents.list))]]
+#   print(paste0("Parents for ", foi, ":"))
+#   print(indNames(parent.oi.gl))
+#   parent.oi.gi <- gl2gi(parent.oi.gl) # convert to gi
+#   pop(parent.oi.gi) <- rep(x = paste0(foi, "_parents"), times = nInd(parent.oi.gi))
+#   
+#   # Select offspring dataset for this family
+#   offspring.oi.gl <- offspring.list[[grep(pattern = foi, x = names(offspring.list))]]
+#   print("Offspring: ")
+#   print(indNames(offspring.oi.gl))
+#   offspring.oi.gi <- gl2gi(offspring.oi.gl)
+#   pop(offspring.oi.gi) <- rep(x = paste0(foi, "_offspring"), times = nInd(offspring.oi.gi))
+#   
+#   # Empty the per_fam_info df and prepare it
+#   per_fam_info.df <- data.frame(indiv=character(), 
+#                                 num.poly=numeric(), 
+#                                 num.mono=numeric(),
+#                                 num.missing=numeric(),
+#                                 num.poly.offspr.mono.parents=numeric(), 
+#                                 stringsAsFactors=FALSE
+#                                 ) 
+#   
+#   
+#   for(o in 1:nInd(offspring.oi.gi)){
+#     
+#     # Subset to one offspring
+#     ind.oi.gi <- offspring.oi.gi[o, ]
+#     
+#     # Retain the indiv name
+#     per_fam_info.df[o,"indiv"] <- indNames(ind.oi.gi)
+#     
+#     # Combine the trio
+#     trio.gl <- repool(ind.oi.gi, parent.oi.gi)
+#     
+#     pa <- private_alleles(gid = trio.gl)
+#     
+#     # Remove any missing loci from the indiv gl
+#     ind.oi_no_missing.gl <- gl.filter.allna(ind.oi.gl)
+#     
+#     # Combine with parent data
+#     
+#     
+#     
+#     # Convert to genind
+#     ind.oi.gi <- gl2gi(x = ind.oi.gl)
+#     pop(in.oi.gi) <- "offspring"
+#     
+#     # Combine 
+#     # combine above with parents, set pop, genind, determine private alleles
+#     
+#     
+#     
+#     
+#     # Remove monomorphic
+#     ind.oi_no_missing_no_mono.gl <- gl.filter.monomorphs(x = ind.oi_no_missing.gl, verbose = NULL)
+#     # FAILS WITH SINGLE IND
+#     
+#     # Identify the missing loci
+#     indiv_missing_loci.vec <- setdiff(x = locNames(ind.oi.gl), y = locNames(ind.oi_no_missing.gl))
+#     
+#     # Identify remaining loci as polymorphic
+#     indiv_polymorph_loci.vec <- locNames(ind.oi_no_missing_no_mono.gl)
+#     
+#     # Identify the removed loci as monomorphic 
+#     indiv_monomorph_loci.vec <- setdiff(x = locNames(ind.oi_no_missing.gl), y = locNames(ind.oi_no_missing_no_mono.gl))
+#     
+#     # Record how many polymorphic, monomorphic, and missing loci total for this indiv
+#     per_fam_info.df[i,"num.poly"]    <- length(indiv_polymorph_loci.vec)
+#     per_fam_info.df[i,"num.mono"]    <- length(indiv_monomorph_loci.vec)
+#     per_fam_info.df[i,"num.missing"] <- length(indiv_missing_loci.vec)
+#     
+#     # How many of the polymorphic loci were monomorphic in parents? 
+#     parents_monomorphs.vec <- parents_monomorphs.list[[grep(pattern = foi, x = names(parents_monomorphs.list))]]
+#     offspr_poly_parents_mono.vec <- setdiff(x = indiv_polymorph_loci.vec, y = parents_monomorphs.vec)
+#     per_fam_info.df[i,"num.poly.offspr.mono.parents"] <- length(offspr_poly_parents_mono.vec)
+#     
+#     # Retain info in list 
+#     per_fam_info.list[[foi]] <- per_fam_info.df
+#     
+#   }
+#   
+# }
 # 
-# # Subset to individual families (parents)
-# all_parent.gl <- vcfR2genlight(parent_vcf) # convert to genlight
-# indNames(all_parent.gl) # identify inds
-# pop(all_parent.gl) <- c("F116", "F114", "F116", "F114", "F115", "F117", "F115", "F117") # assign pop IDs
-# separated_pops_parents.list <- seppop(all_parent.gl) # separate to indiv pops
-# F114_parents.gl <- separated_pops_parents.list$F114
-# F114_parents.gl$gen[[1]]@snp # gives per-sample missing data
-# #F114_parents.gi <- gl2gi(x = F114_parents.gl) # throws error
-# 
-# 
-# 
-# 
-# # Identify fully typed loci
-# F114_parents.gl <- gl.filter.monomorphs(x = F114_parents.gl)
-# 
-# 
+# # Note: the above will miss alternate homozygotes, which could be captured by parent x offspring gid and private_alleles of poppr
