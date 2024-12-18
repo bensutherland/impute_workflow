@@ -13,9 +13,10 @@ The default pipeline assumes that the high-density and low-density data were gen
 Note: no duplicate individuals (i.e., tech replicates) should be present.    
 
 #### Special Functions ####
-- Screen for Mendelian incompatibilities in panel data [here](20_docs/README_MI.md)     
+- Screen for Mendelian incompatibilities [here](20_docs/README_MI.md)     
 - Compare between platform concordance [here](20_docs/README_compare_shared_loci_HD_LD.md)    
-
+- Screen for unexpected parental monomorphism per family [here](20_docs/README_unexpected_monomorphism.md)      
+- Tally genotypes per sample in empirical and imputed data [here](20_docs/README_tally_genos.md)    
 
 ### 01. Prepare input data ### 
 #### wgrs data (HD data) ####

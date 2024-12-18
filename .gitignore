@@ -4,10 +4,13 @@
 *.vcf
 *.vcf.gz
 *.csv
+*.ods
 *.haplotypes
 *.genotypes
 *.pdf
 *#
 *.swp
 .Rhistory
+*.Rdata
+*.RData
 
