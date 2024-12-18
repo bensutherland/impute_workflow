@@ -1,29 +1,31 @@
-##### Optional: Simulate a panel from input 10X data #####
-Put the 10X mpileup filtered file with AF added to `10_impute_input`.
+##### Optional: Simulate a panel in silico  #####
+This assumes that your target file contains only the individuals targeted to be subset into panel loci, and the file has been put in `10_in_silico_panel`.     
 
+Subsample from the target BCF file:     
 ```
-# Filter for AF around the average in the panel data (assessed by amplitools):
-bcftools view -i 'INFO/AF > 0.2 && INFO/AF < 0.35' 10_impute_input/mpileup_calls_noindel5_miss0.1_SNP
-_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_AF.bcf -Ob -o 10_impute_input/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_minDP4_maxDP100_miss0.1_AF_0.2-0.35.bcf
-
 # Obtain header
-bcftools view --header-only  10_impute_input/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_
-minDP4_maxDP100_miss0.1_AF_0.2-0.35.bcf > 10_impute_input/subsample.vcf
+bcftools view --header-only 10_in_silico_panel/*.bcf > 10_in_silico_panel/subsample.vcf
 
 # Subsample
-bcftools view --no-header 10_impute_input/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_min
-DP4_maxDP100_miss0.1_AF_0.2-0.35.bcf | awk '{printf("%f\t%s\n",rand(),$0);}' | sort -t $'\t' -k1,1g | cut -f2-  | head -n 370 >> 10_impute_input/subsample.vcf
-
+bcftools view --no-header 10_in_silico_panel/*.bcf | awk '{ printf("%f\t%s\n", rand(), $0); }' | sort -t $'\t' -k1,1g | cut -f2- | head -n 1000 >> 10_in_silico_panel/subsample.vcf
 # Note: solution from Pierre Lindenbaum: http://lindenb.github.io/jvarkit/DownSampleVcf.html
-# Note2: take 370 to account for not complete overlap with the 10X and 20X (temporary)
+# Note2: here 1000 is the number of SNPs retained in the random subsample.     
 
 # Sort and save as BCF file
-bcftools sort 10_impute_input/subsample.vcf -Ob -o 10_impute_input/subsample_offspring_10x.bcf
-bcftools index 10_impute_input/subsample_offspring_10x.bcf
+bcftools sort 10_in_silico_panel/subsample.vcf -Ob -o 10_in_silico_panel/subsample_sort.bcf
+bcftools index 10_in_silico_panel/subsample_sort.bcf
 
+# This is the new in silico 'amplicon panel' file.     
 ```
 
-Combine the simulated panel with parent data
+Combine the simulated panel with parent (and grandparent) data
+
+
+
+
+
+
+### OLD ###
 ```
 # Copy in the parent data and index
 bcftools index 10_impute_input/parent_wgrs/mpileup_calls_noindel5_miss0.1_SNP_q20_avgDP10_biallele_mi
