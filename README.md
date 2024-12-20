@@ -272,6 +272,9 @@ Further prepare data:
 ./01_scripts/ai2_to_fimpute3.R
 # ...this creates a pedigree file, a map file per chr, and parts needed for genotypes file per chr
 
+# *Note*: this will assume females and males sample names end with F or M, respectively, otherwise will default to male. If there are parents without this name format, edit the pedigree file that was produced in 04_impute/fimpute/pedigree.csv 
+# Note: if you are editing, ensure that the order is sire then dam for fimpute3, else an error will occur
+
 # Edit and combine components needed for per-chr genotypes files
 ./01_scripts/prep_fi3_indiv_chr.sh
 
