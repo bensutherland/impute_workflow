@@ -17,6 +17,8 @@ Note: no duplicate individuals (i.e., tech replicates) should be present.
 - Compare between platform concordance [here](20_docs/README_compare_shared_loci_HD_LD.md)    
 - Screen for unexpected parental monomorphism per family [here](20_docs/README_unexpected_monomorphism.md)      
 - Tally genotypes per sample in empirical and imputed data [here](20_docs/README_tally_genos.md)    
+- Compare allele freq. per locus in empirical and imputed data [here](20_docs/README_compare_allele_freq.md)      
+
 
 ### 01. Prepare input data ### 
 #### wgrs data (HD data) ####

@@ -13,4 +13,5 @@
 .Rhistory
 *.Rdata
 *.RData
+*~
 

@@ -32,9 +32,9 @@ num_to_plot <- 200
 
 #### 01. Set up ####
 # Set filenames
-empirical_selected_offspring_AF.FN <- "allele_freq_comp/empirical_offspring_AF.txt"
-imputed_ai2_selected_offspring_AF.FN <- "allele_freq_comp/imputed_ai2_offspring_AF.txt"
-imputed_fi3_selected_offspring_AF.FN <- "allele_freq_comp/imputed_fi3_offspring_AF.txt"
+empirical_selected_offspring_AF.FN   <- "05_compare/fi3_vs_empirical/all_inds_empirical_shared_w_tags_AF.txt"
+imputed_ai2_selected_offspring_AF.FN <- "05_compare/fi3_vs_empirical/all_inds_imputed_shared_common_samples_w_tags_AF.txt"
+imputed_fi3_selected_offspring_AF.FN <- "05_compare/ai2_vs_empirical/all_inds_imputed_shared_common_samples_w_tags_AF.txt"
 
 ## Read in data
 # Empirical
@@ -72,12 +72,12 @@ emp_v_ai2.df$emp_v_ai2_AF <- emp_v_ai2.df$AF_emp - emp_v_ai2.df$AF_ai2
 head(emp_v_ai2.df)
 
 # Summary stats
-summary(emp_v_ai2.df$AF_emp)
-sd(emp_v_ai2.df$AF_emp)
-summary(emp_v_ai2.df$AF_ai2)
-sd(emp_v_ai2.df$AF_ai2)
-summary(emp_v_ai2.df$emp_v_ai2_AF)
-sd(emp_v_ai2.df$emp_v_ai2_AF)
+summary(emp_v_ai2.df$AF_emp) # empirical AF
+sd(emp_v_ai2.df$AF_emp)      # empirical AF
+summary(emp_v_ai2.df$AF_ai2) # imputed AF
+sd(emp_v_ai2.df$AF_ai2)      # imputed AF
+summary(emp_v_ai2.df$emp_v_ai2_AF) # empirical minus imputed AF
+sd(emp_v_ai2.df$emp_v_ai2_AF)      # empirical minus imputed AF
 
 
 # Empirical vs. fi3 imputed, combine
@@ -87,21 +87,21 @@ nrow(emp_v_fi3.df)
 
 # Calculate empirical AF minus ai2 AF
 emp_v_fi3.df$emp_v_fi3_AF <- emp_v_fi3.df$AF_emp - emp_v_fi3.df$AF_fi3
-head(emp_v_ai2.df)
+head(emp_v_fi3.df)
 
 # Summary stats
-summary(emp_v_fi3.df$AF_emp)
-sd(emp_v_fi3.df$AF_emp)
-summary(emp_v_fi3.df$AF_fi3)
-sd(emp_v_fi3.df$AF_fi3)
-summary(emp_v_fi3.df$emp_v_fi3_AF)
-sd(emp_v_fi3.df$emp_v_fi3_AF)
+summary(emp_v_fi3.df$AF_emp) # empirical AF
+sd(emp_v_fi3.df$AF_emp)      # empirical AF
+summary(emp_v_fi3.df$AF_fi3) # imputed AF
+sd(emp_v_fi3.df$AF_fi3)      # imputed AF
+summary(emp_v_fi3.df$emp_v_fi3_AF) # empirical minus imputed AF
+sd(emp_v_fi3.df$emp_v_fi3_AF)      # empirical minus imputed AF
 
 
 # AI2 imputed
 emp_v_ai2_sampled.df <- sample_n(emp_v_ai2.df, num_to_plot)
 
-pdf(file = "allele_freq_comp/empirical_vs_alphaimpute_AF.pdf", width = 14, height = 6)
+pdf(file = "05_compare/empirical_vs_imputed_ai2_AF.pdf", width = 14, height = 6)
 plot(y = emp_v_ai2_sampled.df$AF_emp, x = seq(1:num_to_plot), ylim = c(-0.2, 1), pch = 16, col = "blue"
      , ylab = "Allele frequency", xlab = "Index"
      , main = paste0("Empirical vs. AlphaImpute2, ", num_to_plot, " random markers")
@@ -115,7 +115,7 @@ dev.off()
 # Fimpute3 imputed
 emp_v_fi3_sampled.df <- sample_n(emp_v_fi3.df, num_to_plot)
 
-pdf(file = "allele_freq_comp/empirical_vs_fi3_AF.pdf", width = 14, height = 6)
+pdf(file = "05_compare/empirical_vs_imputed_fi3_AF.pdf", width = 14, height = 6)
 plot(y = emp_v_fi3_sampled.df$AF_emp, x = seq(1:num_to_plot), ylim = c(-0.2, 1), pch = 16, col = "blue"
      , ylab = "Allele frequency", xlab = "Index"
      , main = paste0("Empirical vs. FImpute3, ", num_to_plot, " random markers")
@@ -126,20 +126,4 @@ legend("bottomleft", legend = c("Emp.", "Imp."), col = c("blue", "orange"), pch 
        , cex = 0.8)
 dev.off()
 
-
-
-
-
-# Things that didn't work
-# pdf(file = "allele_freq_comp/empirical_vs_imputed_ai2_AF.pdf", width = 9, height = 6)
-# plot(x = emp_v_ai2.df$AF_emp, y = emp_v_ai2.df$AF_ai2)
-# dev.off()
-# str(emp_v_fi3.df)
-# test.df <- emp_v_fi3.df[1:20, ]
-# 
-# emp_v_fi3.contour <- ggplot(data = test.df, aes(x = AF_emp, y = AF_fi3)) +
-#   stat_density_2d()
-# 
-# emp_v_fi3.contour
-
-
+# End #
