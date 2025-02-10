@@ -1,6 +1,8 @@
 # impute_workflow
 Imputation workflow for working with amplicon panel and wgrs data
 
+**Note**: this software is provided 'as is', without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose and noninfringement. In no event shall the authors or copyright holders be liable for any claim, damages, or other liability, whether in action of contract, tort or otherwise, arising from, out of, or in connection with the software or the use or other dealings in the software.             
+
 ### 00. Getting started ###
 Clone the present repo, all commands will occur in the repo unless indicated.    
 
