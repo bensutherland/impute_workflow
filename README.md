@@ -1,7 +1,23 @@
 # impute_workflow
 Imputation workflow for working with amplicon panel and wgrs data
+Developed by Ben J. G. Sutherland, Ph.D. (Sutherland Bioinformatics & VIU) in the working group of Timothy J. Green (VIU).     
 
 **Note**: this software is provided 'as is', without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose and noninfringement. In no event shall the authors or copyright holders be liable for any claim, damages, or other liability, whether in action of contract, tort or otherwise, arising from, out of, or in connection with the software or the use or other dealings in the software.             
+
+The development of this pipeline has been supported by the following organizations: [Support and Funding page](20_docs/funding_support.md).     
+
+#### Requirements:       
+- Linux operating system      
+- bcftools    
+- R and RStudio    
+- AlphaImpute2 (and/or with FImpute3)    
+- FImpute3 (and/or with AlphaImpute2)    
+
+#### Citation ####
+If you find this tool useful, please cite the original article that uses the tool: (currently uploading)       
+
+Please also be sure to cite the tools applied within each function.      
+
 
 ### 00. Getting started ###
 Clone the present repo, all commands will occur in the repo unless indicated.    
