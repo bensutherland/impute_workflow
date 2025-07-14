@@ -19,6 +19,8 @@ current.path <- gsub(pattern = "/01_scripts", replacement = "", x = current.path
 setwd(current.path)
 rm(current.path)
 
+
+#### 01. Per individual focus ####
 # Set variables
 #MI.FN     <- "06_screen_loci/parents_and_offspring_wgrs_MI_count.txt"
 MI.FN     <- "06_screen_loci/parents_and_offspring_panel_MI_count.txt"
@@ -95,3 +97,37 @@ MI.df %>%
   summarize(mean.nskipped = mean(nSkipped))
 
 save.image(file = gsub(pattern = ".txt", replacement = "_output.RData", x = MI.FN))
+
+
+#### 02. Per locus focus ####
+# Load depth (see README)
+perloc_dp.df <- read.delim(file = "06_screen_loci/per_loc_dp_panel.txt", header = F)
+colnames(perloc_dp.df) <- c("chr", "pos", "dp")
+perloc_dp.df$mname <- paste0(perloc_dp.df$chr, "__", perloc_dp.df$pos)
+head(perloc_dp.df) # create identifier for merging information
+
+# Load MIs
+perloc_MI.df <- read.delim(file = "06_screen_loci/LD_MI_freq.txt", header = F, sep = " ")
+colnames(perloc_MI.df) <- c("chr", "pos", "MI")
+perloc_MI.df$mname <- paste0(perloc_MI.df$chr, "__", perloc_MI.df$pos)
+head(perloc_MI.df)
+
+# Merge
+perloc_all.df <- merge(x = perloc_dp.df, y = perloc_MI.df, by = "mname")
+perloc_all.df <- as.data.frame(perloc_all.df)
+str(perloc_all.df)
+dim(perloc_all.df)
+perloc_all.df <- perloc_all.df[,c("mname", "chr.x", "pos.x", "dp", "MI")]
+colnames(perloc_all.df) <- gsub(pattern = "\\.x", replacement = "", x = colnames(perloc_all.df))
+head(perloc_all.df)
+
+pdf(file = "06_screen_loci/scatter_perloc_MI_by_dp.pdf", width = 6.5, height = 3.5)
+plot(perloc_all.df$dp, perloc_all.df$MI)
+dev.off()
+
+pdf(file = "06_screen_loci/hist_perloc_dp.pdf", width = 6.5, height = 3.5)
+hist(perloc_all.df$dp, breaks = 100)
+abline(v = 230022)
+
+summary(perloc_all.df$dp)
+

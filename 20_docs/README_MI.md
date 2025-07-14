@@ -21,7 +21,7 @@ awk '{ print $3 "," $2 "," $1 }' 04_impute/pedigree.csv | grep -vE '^0' - > 06_s
 bcftools +mendelian 06_screen_loci/parents_and_offspring_panel.bcf -T 06_screen_loci/trios.txt --mode -c > 06_screen_loci/parents_and_offspring_panel_MI_count.txt
 
 # Use Rscript to assess results
-assess_MI_counts.R
+01_scripts/assess_MI_counts.R
 
 # Annotate the number of Mendelian errors (MERR) in the BCF file and output
 bcftools +mendelian 06_screen_loci/parents_and_offspring_panel.bcf -T 06_screen_loci/trios.txt --mode a -Ob -o 06_screen_loci/parents_and_offspring_panel_MERR.bcf
@@ -39,6 +39,18 @@ bcftools view -i 'INFO/MERR >= 4' 06_screen_loci/*_MERR.bcf -Ob -o 06_screen_loc
 # Index
 bcftools index 06_screen_loci/MERR_loci.bcf 
 ```
+
+It may also be of interest to compare the depth of the high MI loci to the depth of the low MI loci to see if there is evidence for a depth difference between the two. For this, generate an extra file based on per-locus average depth, then compare to the number of MIs.     
+```
+# Calculate per locus depth
+bcftools query -f '%CHROM\t%POS\t%INFO/DP\n' 06_screen_loci/parents_and_offspring_panel.bcf > 06_screen_loci/per_loc_dp_panel.txt
+
+# Use RScript to explore output in relation to MIs
+01_scripts/assess_MI_counts.R  
+
+```
+It is important to keep in mind that there may be some saturated sequencing effort that could prevent detection of a trend here (i.e., calls may be limited after a certain depth, or genotypes, etc.).    
+
 
 ### 02. Remove problematic loci from the analysis ###
 Follow the main README workflow up to and including merging HD+LD parents with LD offspring, then use the problem loci BCF file to drop bad loci from the BCF:    
@@ -81,7 +93,7 @@ bcftools query -l 06_screen_loci/parents_and_offspring_wgrs.bcf | grep 'ASY2' - 
 bcftools +mendelian 06_screen_loci/parents_and_offspring_wgrs.bcf -T 06_screen_loci/trios_limited.txt --mode c > 06_screen_loci/parents_and_offspring_wgrs_MI_count.txt
 
 # Use Rscript to assess results
-assess_MI_counts.R
+01_scripts/assess_MI_counts.R
 
 # Use bcftools plugin Mendelian to annotate the number of Mendelian errors (MERR) in the BCF file and output
 bcftools +mendelian 06_screen_loci/parents_and_offspring_wgrs.bcf -T 06_screen_loci/trios_limited.txt --mode a -Ob -o 06_screen_loci/parents_and_offspring_wgrs_MERR.bcf
