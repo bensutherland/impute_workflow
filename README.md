@@ -1,6 +1,6 @@
 # impute_workflow
 Imputation workflow for working with amplicon panel and wgrs data
-Developed by Ben J. G. Sutherland, Ph.D. (Sutherland Bioinformatics & VIU) in the working group of Timothy J. Green (VIU).     
+Developed by Ben J. G. Sutherland, Ph.D. (Sutherland Bioinformatics & VIU) in the working group of Timothy J. Green, Ph.D. (VIU).     
 
 **Note**: this software is provided 'as is', without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose and noninfringement. In no event shall the authors or copyright holders be liable for any claim, damages, or other liability, whether in action of contract, tort or otherwise, arising from, out of, or in connection with the software or the use or other dealings in the software.             
 
@@ -14,7 +14,8 @@ The development of this pipeline has been supported by the following organizatio
 - FImpute3 (and/or with AlphaImpute2)    
 
 #### Citation ####
-If you find this tool useful, please cite the original article that uses the tool: (currently uploading)       
+If you find this tool useful, please cite the original article that uses the tool:      
+Sutherland et al. 2026. Pedigree-based genome-wide imputation using a low-density amplicon panel for the highly polymorphic Pacific oyster Crassostrea (Magallana) gigas. Aquaculture 612(1), 743096. [link](https://doi.org/10.1016/j.aquaculture.2025.743096)         
 
 Please also be sure to cite the tools applied within each function.      
 
@@ -26,7 +27,7 @@ Requires the following inputs put in `02_input_data`:
 - high-density (wgrs) BCF file
 - low-density (panel) BCF file
 
-The default pipeline assumes that the high-density and low-density data were generated independently, and that within each are parents and offspring genotyped together. Some support of different inputs is provided (#TODO, link).     
+The default pipeline assumes that the high-density and low-density data were generated independently, and that within each are parents and offspring genotyped together.      
 
 Note: no duplicate individuals (i.e., tech replicates) should be present.    
 
@@ -220,6 +221,7 @@ bcftools query -l 04_impute/all_inds_wgrs_and_panel_biallele.bcf > 04_impute/ped
 # <indiv> <sire> <dam>     
 # where if there is no sire or dam, put 0
 # save as space-delimited    
+# no header
 ```
 
 #### Imputation with AlphaImpute2: ####   
